@@ -488,15 +488,13 @@ async function generateAI() {
 - 改行を使って読みやすく`;
 
   try {
-    const res = await fetch('https://lucky-thunder-d083.tabatatsu109.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+ const res = await fetch('https://lucky-thunder-d083.tabatatsu109.workers.dev', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
     const json = await res.json();
 const text = json.content?.[0]?.text || json.text || '';
     if (text) {
