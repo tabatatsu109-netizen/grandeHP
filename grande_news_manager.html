@@ -498,8 +498,7 @@ async function generateAI() {
       })
     });
     const json = await res.json();
-    const text = json.content?.[0]?.text || '';
-
+const text = json.content?.[0]?.text || json.text || '';
     if (text) {
       document.getElementById('fBody').value = text;
       document.getElementById('previewContent').textContent = text;
