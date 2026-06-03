@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ニュース管理│GRANDE FC</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --green:#1A6B3C; --green-dark:#0F4526; --green-deep:#071A0F;
+    --gold:#D4A820; --gold-light:#E8C040;
+    --white:#FFFFFF; --off-white:#F4F7FB;
+    --gray:#8A9BB0; --text:#0D1B2A; --border:#DDE4EF;
+    --red:#C0392B; --red-light:#FDECEA;
+  }
+  body { font-family:'Noto Sans JP',sans-serif; background:var(--off-white); color:var(--text); min-height:100vh; }
+
+  header { background:var(--green-deep); padding:0 2rem; height:60px; display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid var(--gold); position:sticky; top:0; z-index:100; }
+  .header-title { display:flex; align-items:center; gap:12px; }
+  .header-title .icon { width:36px; height:36px; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .header-title h1 { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:900; color:var(--white); letter-spacing:1px; }
+  .header-title h1 span { color:var(--gold); }
+  .sync-status { font-size:12px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:6px; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--gray); }
+  .sync-dot.synced { background:#2ECC71; }
+  .sync-dot.syncing { background:var(--gold); animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .app { display:grid; grid-template-columns:320px 1fr; min-height:calc(100vh - 60px); }
+  @media(max-width:768px){ .app{grid-template-columns:1fr;} }
+
+  .sidebar { background:var(--white); border-right:1px solid var(--border); display:flex; flex-direction:column; }
+  .sidebar-head { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .sidebar-head h2 { font-size:13px; font-weight:700; color:var(--text); }
+  .btn-add { background:var(--green); color:var(--white); border:none; padding:8px 14px; font-size:13px; font-weight:700; font-family:'Noto Sans JP',sans-serif; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s; }
+  .btn-add:hover { background:var(--green-dark); }
+
+  .post-list { flex:1; overflow-y:auto; }
+  .post-item { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s; }
+  .post-item:hover { background:var(--off-white); }
+  .post-item.active { background:#EEF7F2; border-left:3px solid var(--green); }
+  .post-item-cat { font-size:11px; font-weight:700; letter-spacing:1px; color:var(--green); font-family:'Barlow Condensed',sans-serif; margin-bottom:3px; }
+  .post-item-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; line-height:1.4; }
+  .post-item-date { font-size:11px; color:var(--gray); }
+  .empty-list { padding:40px 16px; text-align:center; color:var(--gray); font-size:13px; }
+
+  .main { display:flex; flex-direction:column; }
+  .form-panel { flex:1; padding:28px 32px; overflow-y:auto; display:none; }
+  .form-panel.show { display:block; }
+  .form-panel-title { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; color:var(--text); margin-bottom:4px; }
+  .form-panel-sub { font-size:13px; color:var(--gray); margin-bottom:24px; }
+
+  .form-group { margin-bottom:18px; }
+  .form-label { display:block; font-size:12px; font-weight:700; color:var(--gray); margin-bottom:5px; letter-spacing:0.5px; }
+  .form-label .req { color:var(--gold); }
+  .form-input, .form-select, .form-textarea {
+    width:100%; padding:10px 12px;
+    border:1px solid var(--border); background:var(--white);
+    color:var(--text); font-family:'Noto Sans JP',sans-serif; font-size:14px;
+    outline:none; transition:border-color 0.2s; border-radius:0; appearance:none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--green); }
+  .form-textarea { min-height:200px; resize:vertical; line-height:1.8; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:900px){ .form-row{grid-template-columns:1fr;} }
+
+  /* AI生成セクション */
+  .ai-section { background:#F0F7F3; border:1px solid #C8E6D4; padding:16px; margin-bottom:18px; }
+  .ai-section-title { font-size:13px; font-weight:700; color:var(--green); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+  .ai-form { display:none; }
+  .ai-form.active { display:block; }
+  .ai-inputs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .ai-inputs.single { grid-template-columns:1fr; }
+  @media(max-width:700px){ .ai-inputs{grid-template-columns:1fr;} }
+  .ai-input { padding:8px 10px; border:1px solid #C8E6D4; background:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none; width:100%; }
+  .ai-input:focus { border-color:var(--green); }
+  .ai-textarea { padding:8px 10px; border:1px solid #C8E6D4; background:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none; width:100%; min-height:80px; resize:vertical; margin-bottom:10px; }
+  .ai-textarea:focus { border-color:var(--green); }
+  .btn-ai { background:var(--green); color:var(--white); border:none; padding:10px 20px; font-size:13px; font-weight:700; font-family:'Noto Sans JP',sans-serif; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s; }
+  .btn-ai:hover { background:var(--green-dark); }
+  .btn-ai:disabled { background:var(--gray); cursor:not-allowed; }
+  .ai-generating { font-size:12px; color:var(--green); margin-top:8px; display:none; }
+  .ai-hint { font-size:11px; color:var(--gray); margin-bottom:8px; }
+
+  .form-actions { display:flex; gap:10px; margin-top:24px; flex-wrap:wrap; }
+  .btn-save { background:var(--green); color:var(--white); border:none; padding:12px 28px; font-size:14px; font-weight:900; font-family:'Noto Sans JP',sans-serif; cursor:pointer; transition:all 0.2s; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); }
+  .btn-save:hover { background:var(--green-dark); }
+  .btn-cancel { background:none; color:var(--gray); border:1px solid var(--border); padding:12px 20px; font-size:14px; font-weight:500; font-family:'Noto Sans JP',sans-serif; cursor:pointer; }
+  .btn-delete { background:none; color:var(--red); border:1px solid var(--red); padding:12px 20px; font-size:14px; font-weight:700; font-family:'Noto Sans JP',sans-serif; cursor:pointer; margin-left:auto; }
+  .btn-delete:hover { background:var(--red-light); }
+
+  .empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center; color:var(--gray); }
+  .empty-state .big-icon { font-size:64px; margin-bottom:16px; opacity:0.4; }
+  .empty-state h3 { font-size:18px; font-weight:700; color:var(--text); margin-bottom:6px; }
+
+  .preview-box { background:var(--off-white); border:1px solid var(--border); padding:16px; margin-top:16px; border-left:3px solid var(--gold); }
+  .preview-box-title { font-size:11px; font-weight:700; color:var(--gold); letter-spacing:2px; margin-bottom:8px; font-family:'Barlow Condensed',sans-serif; }
+  .preview-content { font-size:14px; color:var(--text); line-height:1.9; white-space:pre-wrap; }
+
+  .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--green-deep); color:var(--white); padding:12px 20px; font-size:13px; font-weight:700; border-left:3px solid var(--gold); transform:translateY(80px); opacity:0; transition:all 0.3s ease; pointer-events:none; }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.error { border-left-color:var(--red); }
+
+  .loading-overlay { position:fixed; inset:0; background:rgba(7,26,15,0.7); display:none; align-items:center; justify-content:center; z-index:200; flex-direction:column; gap:12px; }
+  .loading-overlay.show { display:flex; }
+  .spinner { width:36px; height:36px; border:3px solid rgba(255,255,255,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-text { color:var(--white); font-size:13px; }
+
+  .pw-screen { position:fixed; inset:0; z-index:999; background:var(--green-deep); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .pw-card { background:rgba(255,255,255,0.04); border:1px solid rgba(212,168,32,0.2); width:100%; max-width:360px; padding:36px 28px; animation:cardIn 0.4s ease; }
+  @keyframes cardIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .pw-icon { font-size:40px; text-align:center; margin-bottom:14px; }
+  .pw-title { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; color:var(--white); text-align:center; margin-bottom:20px; }
+  .pw-title span { color:var(--gold); }
+  .pw-input { width:100%; padding:13px 14px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); color:var(--white); font-size:16px; font-family:'Noto Sans JP',sans-serif; outline:none; transition:border-color 0.2s; margin-bottom:10px; }
+  .pw-input:focus { border-color:var(--gold); }
+  .pw-input.shake { animation:shake 0.4s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+  .pw-error { font-size:12px; color:#FF8A8A; min-height:18px; margin-bottom:14px; }
+  .pw-btn { width:100%; padding:14px; background:var(--gold); color:var(--green-deep); border:none; font-size:14px; font-weight:900; font-family:'Noto Sans JP',sans-serif; cursor:pointer; }
+  .pw-btn:hover { background:var(--gold-light); }
+</style>
+</head>
+<body>
+
+<div class="pw-screen" id="pwScreen">
+  <div class="pw-card">
+    <div class="pw-icon">📰</div>
+    <div class="pw-title">ニュース管理 <span>GRANDE</span></div>
+    <input class="pw-input" type="password" id="pwInput" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')checkPw()">
+    <div class="pw-error" id="pwError"></div>
+    <button class="pw-btn" onclick="checkPw()">ログイン →</button>
+  </div>
+</div>
+
+<header>
+  <div class="header-title">
+    <div class="icon">📰</div>
+    <h1>ニュース管理 <span>GRANDE FC</span></h1>
+  </div>
+  <div class="sync-status">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncText">接続中...</span>
+  </div>
+</header>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <h2>投稿一覧</h2>
+      <button class="btn-add" onclick="newPost()">＋ 新規投稿</button>
+    </div>
+    <div class="post-list" id="postList"></div>
+  </div>
+
+  <div class="main" id="mainArea">
+    <div class="empty-state" id="emptyState">
+      <div class="big-icon">📝</div>
+      <h3>投稿を選択または新規作成</h3>
+      <p style="font-size:13px;">左のリストから投稿を選ぶか、<br>「＋ 新規投稿」ボタンで作成してください。</p>
+    </div>
+
+    <div class="form-panel" id="formPanel">
+      <div class="form-panel-title" id="formTitle">新規投稿</div>
+      <div class="form-panel-sub">投稿情報を入力してください</div>
+
+      <!-- カテゴリー・日付 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">カテゴリー <span class="req">必須</span></label>
+          <select class="form-select" id="fCat" onchange="onCategoryChange()">
+            <option value="">選択してください</option>
+            <option value="ジュニアユース">ジュニアユース</option>
+            <option value="ジュニア">ジュニア</option>
+            <option value="スクール">スクール</option>
+            <option value="巡回サッカー">巡回サッカー</option>
+            <option value="イベント">イベント</option>
+            <option value="お知らせ">お知らせ</option>
+            <option value="選手募集">選手募集</option>
+            <option value="クラブニュース">クラブニュース</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">日付 <span class="req">必須</span></label>
+          <input class="form-input" type="date" id="fDate">
+        </div>
+      </div>
+
+      <!-- AI生成セクション（カテゴリー別） -->
+      <div class="ai-section" id="aiSection" style="display:none;">
+        <div class="ai-section-title">✨ AI文章生成</div>
+
+        <!-- 試合結果フォーム（ジュニアユース・ジュニア） -->
+        <div class="ai-form" id="aiForm_match">
+          <p class="ai-hint">試合情報を入力すると、自然なニュース記事を自動生成します。</p>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_opponent" placeholder="対戦相手（例：FCテスト）">
+            <input class="ai-input" type="text" id="ai_score" placeholder="スコア（例：3-1）">
+            <input class="ai-input" type="text" id="ai_tournament" placeholder="大会名（例：ツルカップ）">
+            <input class="ai-input" type="text" id="ai_scorer" placeholder="得点者（例：山田・鈴木）">
+          </div>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_assist" placeholder="アシスト（例：佐藤・中村）">
+            <input class="ai-input" type="text" id="ai_match_comment" placeholder="コーチコメント（例：粘り強く戦えた）">
+          </div>
+        </div>
+
+        <!-- スクールフォーム -->
+        <div class="ai-form" id="aiForm_school">
+          <p class="ai-hint">スクール活動の情報を入力してください。</p>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_school_date" placeholder="開催日（例：6月3日）">
+            <input class="ai-input" type="text" id="ai_school_theme" placeholder="テーマ（例：ドリブル練習）">
+            <input class="ai-input" type="text" id="ai_school_count" placeholder="参加人数（例：20名）">
+          </div>
+          <textarea class="ai-textarea" id="ai_school_comment" placeholder="コメント（例：みんな元気よく参加してくれました）"></textarea>
+        </div>
+
+        <!-- 巡回サッカーフォーム -->
+        <div class="ai-form" id="aiForm_junkai">
+          <p class="ai-hint">巡回サッカーの情報を入力してください。</p>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_junkai_place" placeholder="訪問先（例：○○小学校）">
+            <input class="ai-input" type="text" id="ai_junkai_grade" placeholder="対象学年（例：3〜6年生）">
+            <input class="ai-input" type="text" id="ai_junkai_count" placeholder="参加人数（例：30名）">
+          </div>
+          <textarea class="ai-textarea" id="ai_junkai_comment" placeholder="コメント（例：楽しくボールと触れ合えました）"></textarea>
+        </div>
+
+        <!-- イベントフォーム -->
+        <div class="ai-form" id="aiForm_event">
+          <p class="ai-hint">イベント情報を入力すると、告知記事を自動生成します。</p>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_event_name" placeholder="イベント名（例：サマーキャンプ2026）">
+            <input class="ai-input" type="text" id="ai_event_date" placeholder="開催日（例：8月10日〜11日）">
+            <input class="ai-input" type="text" id="ai_event_venue" placeholder="会場（例：八ヶ岳グラウンド）">
+            <input class="ai-input" type="text" id="ai_event_target" placeholder="対象（例：小学3〜6年生）">
+          </div>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_event_fee" placeholder="参加費（例：3,000円）">
+            <input class="ai-input" type="text" id="ai_event_apply" placeholder="申込方法（例：LINEにて受付）">
+          </div>
+          <textarea class="ai-textarea" id="ai_event_content" placeholder="内容・アピールポイント（例：コーチと一緒に楽しく上達できます）"></textarea>
+        </div>
+
+        <!-- お知らせフォーム -->
+        <div class="ai-form" id="aiForm_info">
+          <p class="ai-hint">伝えたい内容を入力してください。</p>
+          <div class="ai-inputs single">
+            <input class="ai-input" type="text" id="ai_info_title" placeholder="お知らせのタイトル（例：練習日程変更のお知らせ）">
+          </div>
+          <textarea class="ai-textarea" id="ai_info_content" placeholder="伝えたい内容を自由に入力してください"></textarea>
+        </div>
+
+        <!-- 選手募集フォーム -->
+        <div class="ai-form" id="aiForm_recruit">
+          <p class="ai-hint">募集情報を入力してください。</p>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_recruit_cat" placeholder="募集カテゴリー（例：ジュニアユース）">
+            <input class="ai-input" type="text" id="ai_recruit_grade" placeholder="対象学年（例：中学1〜3年生）">
+            <input class="ai-input" type="text" id="ai_recruit_day" placeholder="活動日（例：火・木・土）">
+            <input class="ai-input" type="text" id="ai_recruit_place" placeholder="活動場所（例：八ヶ岳グラウンド）">
+          </div>
+          <div class="ai-inputs">
+            <input class="ai-input" type="text" id="ai_recruit_num" placeholder="募集人数（任意）">
+            <select class="ai-input" id="ai_recruit_trial">
+              <option value="">体験練習受付</option>
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
+            <input class="ai-input" type="text" id="ai_recruit_apply" placeholder="申込方法（例：LINEにてご連絡ください）">
+          </div>
+          <textarea class="ai-textarea" id="ai_recruit_appeal" placeholder="アピールポイント（例：アットホームなチームです）"></textarea>
+        </div>
+
+        <!-- クラブニュース・汎用フォーム -->
+        <div class="ai-form" id="aiForm_general">
+          <p class="ai-hint">内容を入力してください。</p>
+          <div class="ai-inputs single">
+            <input class="ai-input" type="text" id="ai_general_title" placeholder="タイトル・テーマ">
+          </div>
+          <textarea class="ai-textarea" id="ai_general_content" placeholder="伝えたい内容を自由に入力してください"></textarea>
+        </div>
+
+        <button class="btn-ai" id="btnAI" onclick="generateAI()">
+          <span>✨</span> AIで文章を生成する
+        </button>
+        <div class="ai-generating" id="aiGenerating">⏳ AIが文章を生成中です...</div>
+      </div>
+
+      <!-- タイトル -->
+      <div class="form-group">
+        <label class="form-label">タイトル <span class="req">必須</span></label>
+        <input class="form-input" type="text" id="fTitle" placeholder="例：春季市内大会 3-1で勝利！">
+      </div>
+
+      <!-- 画像URL -->
+      <div class="form-group">
+        <label class="form-label">画像URL（Googleドライブのリンク）</label>
+        <input class="form-input" type="text" id="fImage" placeholder="https://drive.google.com/file/d/..." oninput="onImageInput(this.value)">
+        <div id="imagePreview" style="display:none; margin-top:8px;">
+          <img id="imagePreviewImg" src="" alt="" style="max-width:100%; max-height:200px; object-fit:cover;">
+        </div>
+      </div>
+
+      <!-- 本文 -->
+      <div class="form-group">
+        <label class="form-label">本文</label>
+        <textarea class="form-textarea" id="fBody" placeholder="本文を入力してください。AIで生成することもできます。"></textarea>
+      </div>
+
+      <div class="preview-box" id="previewBox" style="display:none;">
+        <div class="preview-box-title">PREVIEW</div>
+        <div class="preview-content" id="previewContent"></div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-save" onclick="savePost()">公開する</button>
+        <button class="btn-cancel" onclick="closeForm()">キャンセル</button>
+        <button class="btn-delete" id="btnDelete" onclick="deletePost()" style="display:none;">削除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">保存中...</div>
+</div>
+
+<script>
+const API_KEY  = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
+const NEWS_BIN = '6a1ed74af5f4af5e29ad180b';
+const WORKER_URL = 'https://lucky-thunder-d083.tabatatsu109.workers.dev';
+
+let posts = [];
+let editingId = null;
+
+// ===== パスワード =====
+function checkPw() {
+  const val = document.getElementById('pwInput').value;
+  if (val === 'tatti109') {
+    document.getElementById('pwScreen').style.display = 'none';
+    sessionStorage.setItem('grande_news_auth', '1');
+    initApp();
+  } else {
+    document.getElementById('pwError').textContent = 'パスワードが違います';
+    const inp = document.getElementById('pwInput');
+    inp.classList.add('shake');
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('shake'), 400);
+  }
+}
+if (sessionStorage.getItem('grande_news_auth') === '1') {
+  document.getElementById('pwScreen').style.display = 'none';
+  initApp();
+}
+
+// ===== 初期化 =====
+async function initApp() {
+  setSyncStatus('syncing', '接続中...');
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}/latest`, {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const json = await res.json();
+    posts = json.record.posts || [];
+    renderList();
+    setSyncStatus('synced', '同期済み');
+  } catch(e) {
+    setSyncStatus('error', 'エラー');
+    showToast('接続に失敗しました', true);
+  }
+}
+
+// ===== 保存 =====
+async function savePosts() {
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+    body: JSON.stringify({ posts })
+  });
+  if (!res.ok) throw new Error('Save failed');
+}
+
+// ===== リスト描画 =====
+function renderList() {
+  const list = document.getElementById('postList');
+  if (!posts.length) {
+    list.innerHTML = '<div class="empty-list">投稿がありません</div>';
+    return;
+  }
+  const sorted = [...posts].sort((a,b) => new Date(b.date) - new Date(a.date));
+  list.innerHTML = sorted.map(p => `
+    <div class="post-item ${editingId === p.id ? 'active' : ''}" onclick="editPost('${p.id}')">
+      <div class="post-item-cat">${p.category || ''}</div>
+      <div class="post-item-title">${p.title || '（タイトルなし）'}</div>
+      <div class="post-item-date">${formatDate(p.date)}</div>
+    </div>
+  `).join('');
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ===== カテゴリー変更でAIフォーム切替 =====
+function onCategoryChange() {
+  const cat = document.getElementById('fCat').value;
+  const aiSection = document.getElementById('aiSection');
+
+  // 全AIフォームを非表示
+  document.querySelectorAll('.ai-form').forEach(f => f.classList.remove('active'));
+
+  if (!cat) {
+    aiSection.style.display = 'none';
+    return;
+  }
+
+  aiSection.style.display = 'block';
+
+  if (cat === 'ジュニアユース' || cat === 'ジュニア') {
+    document.getElementById('aiForm_match').classList.add('active');
+  } else if (cat === 'スクール') {
+    document.getElementById('aiForm_school').classList.add('active');
+  } else if (cat === '巡回サッカー') {
+    document.getElementById('aiForm_junkai').classList.add('active');
+  } else if (cat === 'イベント') {
+    document.getElementById('aiForm_event').classList.add('active');
+  } else if (cat === 'お知らせ') {
+    document.getElementById('aiForm_info').classList.add('active');
+  } else if (cat === '選手募集') {
+    document.getElementById('aiForm_recruit').classList.add('active');
+  } else {
+    document.getElementById('aiForm_general').classList.add('active');
+  }
+}
+
+// ===== 新規 =====
+function newPost() {
+  editingId = null;
+  document.getElementById('fCat').value = '';
+  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fBody').value = '';
+  document.getElementById('fImage').value = '';
+  document.getElementById('imagePreview').style.display = 'none';
+  document.getElementById('previewBox').style.display = 'none';
+  document.getElementById('btnDelete').style.display = 'none';
+  document.getElementById('formTitle').textContent = '新規投稿';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('formPanel').classList.add('show');
+  document.getElementById('aiSection').style.display = 'none';
+  document.querySelectorAll('.ai-form').forEach(f => f.classList.remove('active'));
+}
+
+// ===== 編集 =====
+function editPost(id) {
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('fCat').value   = p.category || '';
+  document.getElementById('fDate').value  = p.date || '';
+  document.getElementById('fTitle').value = p.title || '';
+  document.getElementById('fBody').value  = p.body || '';
+  document.getElementById('fImage').value = p.image || '';
+  if (p.image) {
+    document.getElementById('imagePreviewImg').src = p.image;
+    document.getElementById('imagePreview').style.display = 'block';
+  } else {
+    document.getElementById('imagePreview').style.display = 'none';
+  }
+  document.getElementById('formTitle').textContent = p.title || '編集';
+  document.getElementById('btnDelete').style.display = 'block';
+  document.getElementById('previewBox').style.display = p.body ? 'block' : 'none';
+  document.getElementById('previewContent').textContent = p.body || '';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('formPanel').classList.add('show');
+  onCategoryChange();
+  renderList();
+}
+
+// ===== 保存 =====
+async function savePost() {
+  const title = document.getElementById('fTitle').value.trim();
+  const cat   = document.getElementById('fCat').value;
+  const date  = document.getElementById('fDate').value;
+  if (!title) { showToast('タイトルを入力してください', true); return; }
+  if (!cat)   { showToast('カテゴリーを選択してください', true); return; }
+  if (!date)  { showToast('日付を入力してください', true); return; }
+
+  const rawImageUrl = document.getElementById('fImage').value.trim();
+  const convertedImage = rawImageUrl ? convertDriveUrl(rawImageUrl) : null;
+
+  const postData = {
+    id: editingId || 'post_' + Date.now(),
+    title,
+    category: cat,
+    date,
+    body: document.getElementById('fBody').value.trim(),
+    image: convertedImage,
+    updatedAt: new Date().toISOString()
+  };
+
+  showLoading('保存中...');
+  setSyncStatus('syncing', '保存中...');
+  try {
+    if (editingId) {
+      const idx = posts.findIndex(p => p.id === editingId);
+      if (idx !== -1) posts[idx] = postData;
+    } else {
+      posts.unshift(postData);
+    }
+    await savePosts();
+    editingId = postData.id;
+    renderList();
+    setSyncStatus('synced', '同期済み');
+    showToast('公開しました！');
+    document.getElementById('formTitle').textContent = postData.title;
+    document.getElementById('btnDelete').style.display = 'block';
+  } catch(e) {
+    showToast('保存に失敗しました', true);
+    setSyncStatus('error', 'エラー');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ===== 削除 =====
+async function deletePost() {
+  if (!editingId) return;
+  const p = posts.find(x => x.id === editingId);
+  if (!confirm(`「${p?.title || '投稿'}」を削除しますか？`)) return;
+  showLoading('削除中...');
+  try {
+    posts = posts.filter(x => x.id !== editingId);
+    await savePosts();
+    showToast('削除しました');
+    closeForm();
+    renderList();
+  } catch(e) {
+    showToast('削除に失敗しました', true);
+  } finally {
+    hideLoading();
+  }
+}
+
+function closeForm() {
+  editingId = null;
+  document.getElementById('formPanel').classList.remove('show');
+  document.getElementById('emptyState').style.display = 'flex';
+  renderList();
+}
+
+// ===== 画像URL変換 =====
+function convertDriveUrl(url) {
+  if (!url) return null;
+  const m1 = url.match(/\/file\/d\/([^\/\?]+)/);
+  if (m1) return 'https://lh3.googleusercontent.com/d/' + m1[1];
+  const m2 = url.match(/[?&]id=([^&]+)/);
+  if (m2) return 'https://lh3.googleusercontent.com/d/' + m2[1];
+  if (url.startsWith('http')) return url;
+  return null;
+}
+
+function onImageInput(val) {
+  const converted = convertDriveUrl(val.trim());
+  if (converted) {
+    document.getElementById('imagePreviewImg').src = converted;
+    document.getElementById('imagePreview').style.display = 'block';
+  } else {
+    document.getElementById('imagePreview').style.display = 'none';
+  }
+}
+
+// ===== AI文章生成 =====
+async function generateAI() {
+  const cat = document.getElementById('fCat').value;
+  let prompt = '';
+  let autoTitle = '';
+
+  if (cat === 'ジュニアユース' || cat === 'ジュニア') {
+    const opponent   = document.getElementById('ai_opponent').value.trim();
+    const score      = document.getElementById('ai_score').value.trim();
+    const tournament = document.getElementById('ai_tournament').value.trim();
+    const scorer     = document.getElementById('ai_scorer').value.trim();
+    const assist     = document.getElementById('ai_assist').value.trim();
+    const comment    = document.getElementById('ai_match_comment').value.trim();
+    if (!opponent && !score) { showToast('対戦相手またはスコアを入力してください', true); return; }
+    const resultText = score ? (score.split('-')[0] > score.split('-')[1] ? '勝利' : score.split('-')[0] === score.split('-')[1] ? '引き分け' : '敗戦') : '';
+    autoTitle = `${tournament || '試合'} ${score ? score + ' ' + resultText : ''}`.trim();
+    prompt = `あなたはサッカークラブのコーチです。保護者向けに試合レポートを書いてください。
+
+試合情報：
+- カテゴリー：${cat}
+- 大会名：${tournament || '試合'}
+- 対戦相手：${opponent}
+- スコア：${score}
+- 得点者：${scorer || 'なし'}
+- アシスト：${assist || 'なし'}
+- コーチコメント：${comment || 'なし'}
+
+【書き方のルール】
+- 4〜6段落で書く
+- 実際のコーチが書くような自然な文体（口語に近く、堅くなりすぎない）
+- 試合の流れや具体的なプレー内容・場面を中心に書く
+- 以下の表現は絶対に使わない：「成長が感じられました」「貴重な経験」「温かいご声援ありがとうございました」「確実に成長しています」「今後ともよろしくお願いいたします」「随所に見られました」「一体感」
+- 抽象的な感想より、具体的なプレー・場面の描写を優先する
+- タイトルは含めず本文のみ
+- 選手名は書かない（「選手たち」「子どもたち」「前線の選手」「守備陣」などで表現する）
+- 段落ごとに改行を入れて読みやすくする`;
+
+  } else if (cat === 'スクール') {
+    const date    = document.getElementById('ai_school_date').value.trim();
+    const theme   = document.getElementById('ai_school_theme').value.trim();
+    const count   = document.getElementById('ai_school_count').value.trim();
+    const comment = document.getElementById('ai_school_comment').value.trim();
+    autoTitle = `スクール活動レポート${date ? '（' + date + '）' : ''}`;
+    prompt = `八ヶ岳グランデフットボールクラブのスクール活動レポートを書いてください。
+
+情報：
+- 開催日：${date || ''}
+- テーマ：${theme || ''}
+- 参加人数：${count || ''}
+- コメント：${comment || ''}
+
+条件：
+- 200〜300文字程度
+- 保護者向けの温かく読みやすい文体
+- 子どもたちの成長と楽しさが伝わる内容
+- タイトルは含めず本文のみ
+- 改行を使って読みやすく`;
+
+  } else if (cat === '巡回サッカー') {
+    const place   = document.getElementById('ai_junkai_place').value.trim();
+    const grade   = document.getElementById('ai_junkai_grade').value.trim();
+    const count   = document.getElementById('ai_junkai_count').value.trim();
+    const comment = document.getElementById('ai_junkai_comment').value.trim();
+    autoTitle = `巡回サッカー${place ? '（' + place + '）' : ''}`;
+    prompt = `八ヶ岳グランデフットボールクラブの巡回サッカー活動レポートを書いてください。
+
+情報：
+- 訪問先：${place || ''}
+- 対象学年：${grade || ''}
+- 参加人数：${count || ''}
+- コメント：${comment || ''}
+
+条件：
+- 200〜300文字程度
+- 保護者・地域の方向けの温かく読みやすい文体
+- 地域との繋がりと子どもたちの笑顔が伝わる内容
+- タイトルは含めず本文のみ
+- 改行を使って読みやすく`;
+
+  } else if (cat === 'イベント') {
+    const name    = document.getElementById('ai_event_name').value.trim();
+    const date    = document.getElementById('ai_event_date').value.trim();
+    const venue   = document.getElementById('ai_event_venue').value.trim();
+    const target  = document.getElementById('ai_event_target').value.trim();
+    const fee     = document.getElementById('ai_event_fee').value.trim();
+    const apply   = document.getElementById('ai_event_apply').value.trim();
+    const content = document.getElementById('ai_event_content').value.trim();
+    autoTitle = name || 'イベントのお知らせ';
+    prompt = `八ヶ岳グランデフットボールクラブのイベント告知記事を書いてください。
+
+情報：
+- イベント名：${name || ''}
+- 開催日：${date || ''}
+- 会場：${venue || ''}
+- 対象：${target || ''}
+- 参加費：${fee || ''}
+- 申込方法：${apply || ''}
+- 内容：${content || ''}
+
+条件：
+- 保護者向けの分かりやすく魅力的な告知文
+- 参加したくなるような前向きな表現
+- タイトルは含めず本文のみ
+- 改行を使って読みやすく`;
+
+  } else if (cat === 'お知らせ') {
+    const title   = document.getElementById('ai_info_title').value.trim();
+    const content = document.getElementById('ai_info_content').value.trim();
+    autoTitle = title || 'お知らせ';
+    prompt = `八ヶ岳グランデフットボールクラブのお知らせ記事を書いてください。
+
+情報：
+- タイトル：${title || ''}
+- 内容：${content || ''}
+
+条件：
+- 保護者向けの丁寧で分かりやすい文体
+- 必要な情報が伝わるシンプルな内容
+- タイトルは含めず本文のみ
+- 改行を使って読みやすく`;
+
+  } else if (cat === '選手募集') {
+    const recCat   = document.getElementById('ai_recruit_cat').value.trim();
+    const grade    = document.getElementById('ai_recruit_grade').value.trim();
+    const day      = document.getElementById('ai_recruit_day').value.trim();
+    const place    = document.getElementById('ai_recruit_place').value.trim();
+    const num      = document.getElementById('ai_recruit_num').value.trim();
+    const trial    = document.getElementById('ai_recruit_trial').value;
+    const apply    = document.getElementById('ai_recruit_apply').value.trim();
+    const appeal   = document.getElementById('ai_recruit_appeal').value.trim();
+    autoTitle = `${recCat || ''}選手募集`;
+    prompt = `八ヶ岳グランデフットボールクラブの選手募集記事を書いてください。
+
+情報：
+- 募集カテゴリー：${recCat || ''}
+- 対象学年：${grade || ''}
+- 活動日：${day || ''}
+- 活動場所：${place || ''}
+- 募集人数：${num || ''}
+- 体験練習：${trial || ''}
+- 申込方法：${apply || ''}
+- アピールポイント：${appeal || ''}
+
+条件：
+- 保護者・選手向けの親しみやすい文体
+- チームの魅力が伝わる前向きな内容
+- タイトルは含めず本文のみ
+- 改行を使って読みやすく`;
+
+  } else {
+    const title   = document.getElementById('ai_general_title').value.trim();
+    const content = document.getElementById('ai_general_content').value.trim();
+    autoTitle = title || '';
+    prompt = `八ヶ岳グランデフットボールクラブのニュース記事を書いてください。
+
+テーマ：${title || ''}
+内容：${content || ''}
+
+条件：
+- 保護者向けの温かく読みやすい文体
+- タイトルは含めず本文のみ
+- 改行を使って読みやすく`;
+  }
+
+  const btn = document.getElementById('btnAI');
+  const generating = document.getElementById('aiGenerating');
+  btn.disabled = true;
+  generating.style.display = 'block';
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const json = await res.json();
+    const text = json.content?.[0]?.text || json.text || '';
+
+    if (text) {
+      document.getElementById('fBody').value = text;
+      document.getElementById('previewContent').textContent = text;
+      document.getElementById('previewBox').style.display = 'block';
+
+      if (!document.getElementById('fTitle').value && autoTitle) {
+        document.getElementById('fTitle').value = autoTitle;
+      }
+      showToast('AI文章を生成しました！');
+    } else {
+      showToast('文章を生成できませんでした', true);
+    }
+  } catch(e) {
+    showToast('AI生成に失敗しました', true);
+  } finally {
+    btn.disabled = false;
+    generating.style.display = 'none';
+  }
+}
+
+// 本文プレビュー
+document.addEventListener('DOMContentLoaded', () => {
+  const bodyInput = document.getElementById('fBody');
+  if (bodyInput) {
+    bodyInput.addEventListener('input', () => {
+      const val = bodyInput.value;
+      if (val) {
+        document.getElementById('previewContent').textContent = val;
+        document.getElementById('previewBox').style.display = 'block';
+      } else {
+        document.getElementById('previewBox').style.display = 'none';
+      }
+    });
+  }
+});
+
+function setSyncStatus(state, text) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncText');
+  dot.className = 'sync-dot ' + (state === 'synced' ? 'synced' : state === 'syncing' ? 'syncing' : '');
+  txt.textContent = text;
+}
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+function showLoading(msg='処理中...') {
+  document.getElementById('loadingText').textContent = msg;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+</script>
+</body>
+</html>
