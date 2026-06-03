@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>グランデ食堂管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1A6B3C;
+    --green-dark: #0f4526;
+    --green-light: #2a8a52;
+    --green-pale: #e8f5ee;
+    --gold: #D4A820;
+    --gold-light: #f0c840;
+    --gold-pale: #fdf6e0;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+    --red: #dc2626;
+    --shadow: 0 4px 20px rgba(26,107,60,0.15);
+    --shadow-gold: 0 4px 20px rgba(212,168,32,0.25);
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: #f0f4f1; color: var(--gray-800); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .header-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; max-width: 1100px; margin: 0 auto;
+  }
+  .header-logo { display: flex; align-items: center; gap: 10px; }
+  .header-logo .badge {
+    background: var(--gold); color: var(--green-dark);
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 11px;
+    padding: 3px 8px; border-radius: 4px; letter-spacing: 1px;
+  }
+  .header-title { color: white; font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; }
+  .header-title span { color: var(--gold); }
+  .save-status { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .save-status.saving { color: var(--gold-light); }
+  .save-status.saved { color: #6ee7a8; }
+
+  /* TABS */
+  .tabs { background: var(--green-dark); display: flex; max-width: 1100px; margin: 0 auto; overflow-x: auto; }
+  .tab-btn {
+    background: none; border: none; color: rgba(255,255,255,0.6);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 500;
+    padding: 11px 20px; cursor: pointer; white-space: nowrap;
+    border-bottom: 3px solid transparent; transition: color 0.2s;
+  }
+  .tab-btn:hover { color: rgba(255,255,255,0.9); }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 700; }
+
+  /* MAIN */
+  .main { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* CARD */
+  .card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 22px; margin-bottom: 18px; }
+  .card-title {
+    font-family: 'Oswald', sans-serif; font-size: 15px; font-weight: 600;
+    color: var(--green); letter-spacing: 1px; margin-bottom: 16px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--green-pale);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* FORM */
+  .fg { display: flex; flex-direction: column; gap: 5px; }
+  .fg label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+  .fg input, .fg select, .fg textarea {
+    border: 1.5px solid var(--gray-200); border-radius: 8px;
+    padding: 9px 12px; font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; color: var(--gray-800); background: white; transition: border-color 0.2s;
+  }
+  .fg input:focus, .fg select:focus, .fg textarea:focus {
+    outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,107,60,0.1);
+  }
+
+  /* BUTTONS */
+  .btn {
+    border: none; border-radius: 8px; padding: 10px 20px;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--green), var(--green-light)); color: white; box-shadow: 0 2px 10px rgba(26,107,60,0.3); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(26,107,60,0.4); }
+  .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--green-dark); box-shadow: var(--shadow-gold); }
+  .btn-gold:hover { transform: translateY(-1px); }
+  .btn-outline { background: white; border: 1.5px solid var(--green); color: var(--green); }
+  .btn-outline:hover { background: var(--green-pale); }
+  .btn-danger { background: #fee2e2; color: var(--red); }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--green); color: white; padding: 10px 12px;
+    text-align: left; font-weight: 600; white-space: nowrap;
+  }
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+  tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.15s; }
+  tbody tr:hover { background: var(--green-pale); }
+  tbody td { padding: 9px 12px; vertical-align: middle; }
+  .num { text-align: right; font-family: 'Oswald', sans-serif; font-size: 14px; }
+  .ctr { text-align: center; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 10px; margin-bottom: 18px; }
+  .stat-box { background: linear-gradient(135deg, var(--green-pale), white); border: 1.5px solid #c8e6d8; border-radius: 12px; padding: 14px; text-align: center; }
+  .stat-box.gold { background: linear-gradient(135deg, var(--gold-pale), white); border-color: #f0d070; }
+  .stat-val { font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 700; color: var(--green); line-height: 1; }
+  .stat-box.gold .stat-val { color: #a07810; }
+  .stat-lbl { font-size: 11px; color: var(--gray-600); margin-top: 4px; }
+
+  /* RANK */
+  .rank-list { list-style: none; }
+  .rank-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; margin-bottom: 5px; background: var(--gray-50); }
+  .rank-item:hover { background: var(--green-pale); }
+  .rank-n { font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 700; color: var(--gray-300); min-width: 28px; text-align: center; }
+  .rank-item:nth-child(1) .rank-n { color: var(--gold); font-size: 22px; }
+  .rank-item:nth-child(2) .rank-n { color: #9ca3af; }
+  .rank-item:nth-child(3) .rank-n { color: #b45309; }
+  .rank-name { flex: 1; font-weight: 500; font-size: 14px; }
+  .rank-val { font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 600; color: var(--green); }
+  .rank-bar-wrap { flex: 2; height: 7px; background: var(--gray-200); border-radius: 4px; overflow: hidden; }
+  .rank-bar { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-light)); border-radius: 4px; transition: width 0.5s; }
+
+  /* BMI */
+  .bmi-meter { position: relative; height: 22px; background: linear-gradient(90deg,#3b82f6 0%,#22c55e 30%,#22c55e 60%,#f59e0b 75%,#ef4444 100%); border-radius: 12px; margin: 14px 0 6px; }
+  .bmi-ptr { position: absolute; top: -5px; transform: translateX(-50%); width: 10px; height: 32px; background: var(--green-dark); border-radius: 3px; transition: left 0.5s; }
+  .bmi-ptr::after { content:''; position:absolute; top:-4px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:7px solid var(--green-dark); }
+  .bmi-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+  .bmi-big { font-family: 'Oswald', sans-serif; font-size: 48px; font-weight: 700; color: var(--green); line-height: 1; text-align: center; }
+  .bmi-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .bmi-under { background: #dbeafe; color: #1d4ed8; }
+  .bmi-normal { background: #dcfce7; color: #166534; }
+  .bmi-over { background: #fef3c7; color: #92400e; }
+  .bmi-obese { background: #fee2e2; color: #991b1b; }
+
+  /* ATTENDANCE */
+  .attend-table thead th { font-size: 12px; padding: 8px 6px; }
+  .attend-table tbody td { padding: 7px 6px; font-size: 12px; }
+  .att-o { display: inline-block; background: #dcfce7; color: #166534; border-radius: 4px; padding: 2px 6px; font-weight: 700; font-size: 11px; }
+  .att-x { display: inline-block; background: var(--gray-100); color: var(--gray-400); border-radius: 4px; padding: 2px 6px; font-size: 11px; }
+  .month-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .month-btn { border: 1.5px solid var(--gray-200); background: white; border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans JP', sans-serif; }
+  .month-btn.active { background: var(--green); border-color: var(--green); color: white; font-weight: 700; }
+
+  /* INVOICE */
+  .inv-box { border: 2px solid var(--gold); border-radius: 14px; padding: 20px; background: var(--gold-pale); }
+  .inv-title { font-family: 'Oswald', sans-serif; font-size: 18px; color: var(--green-dark); font-weight: 700; margin-bottom: 14px; border-bottom: 2px solid var(--gold); padding-bottom: 8px; letter-spacing: 2px; }
+  .inv-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed #e0c060; font-size: 13px; }
+  .inv-total { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0; font-size: 16px; font-weight: 700; }
+  .inv-amount { font-family: 'Oswald', sans-serif; font-size: 28px; color: var(--green-dark); }
+
+  /* CUP INPUT */
+  .cup-input {
+    width: 64px; border: 2px solid var(--gray-200); border-radius: 8px;
+    padding: 6px 6px; font-size: 15px; font-weight: 700; text-align: center;
+    font-family: 'Oswald', sans-serif; color: var(--gray-800); transition: border-color 0.2s;
+  }
+  .cup-input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,107,60,0.1); }
+  .cup-input.has-val { border-color: var(--green); background: var(--green-pale); }
+
+  /* MISC */
+  .flex { display: flex; align-items: center; gap: 8px; }
+  .flex-b { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .empty { text-align: center; color: var(--gray-400); padding: 30px; font-size: 13px; }
+  .loading { text-align: center; color: var(--gray-400); padding: 30px; font-size: 13px; }
+
+  /* TOAST */
+  .toasts { position: fixed; top: 76px; right: 14px; z-index: 9999; display: flex; flex-direction: column; gap: 7px; }
+  .toast { background: var(--green-dark); color: white; padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; border-left: 4px solid var(--gold); }
+  .toast.err { background: #7f1d1d; border-color: #ef4444; }
+  @keyframes slideIn { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+  /* MODAL */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.open { display: flex; }
+  .modal { background: white; border-radius: var(--radius-lg); padding: 26px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-title { font-family: 'Oswald', sans-serif; font-size: 17px; color: var(--green); font-weight: 600; margin-bottom: 18px; letter-spacing: 1px; }
+  .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+  @media (max-width: 640px) {
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .header-title { font-size: 16px; }
+    .card { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toasts" id="toasts"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <div class="badge">GRANDE</div>
+      <div class="header-title">⚽ <span>食堂</span>管理</div>
+    </div>
+    <div class="save-status" id="saveStatus">読み込み中...</div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('input',this)">📝 入力</button>
+    <button class="tab-btn" onclick="switchTab('attend',this)">📅 出席・請求</button>
+    <button class="tab-btn" onclick="switchTab('rank',this)">🏆 ランキング</button>
+    <button class="tab-btn" onclick="switchTab('bmi',this)">📊 BMI</button>
+  </nav>
+</header>
+
+<main class="main">
+
+<!-- ===== TAB: 入力 ===== -->
+<div class="tab-content active" id="tab-input">
+  <div class="card">
+    <div class="card-title">📝 食堂記録入力</div>
+
+    <!-- 日付＋メニュー -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+      <div class="fg">
+        <label>📅 日付</label>
+        <input type="date" id="in-date">
+      </div>
+      <div class="fg">
+        <label>🍽 メニュー（複数可）</label>
+        <input type="text" id="in-menu" placeholder="例: ご飯・チキンステーキ・デザート">
+      </div>
+    </div>
+
+    <!-- 選手杯数一覧 -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:8px;">🧑‍🤝‍🧑 選手ごとの杯数（食べた分だけ入力）</div>
+      <div id="cupInputArea" class="loading">選手データ読み込み中...</div>
+    </div>
+
+    <div class="flex" style="gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveSession()">💾 保存する</button>
+      <button class="btn btn-outline btn-sm" onclick="clearInputForm()">クリア</button>
+    </div>
+  </div>
+
+  <!-- 最近の記録 -->
+  <div class="card">
+    <div class="flex-b" style="margin-bottom:14px;">
+      <div class="card-title" style="margin:0;border:none;padding:0;">📋 記録履歴</div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>日付</th><th>メニュー</th><th>参加人数</th><th>総杯数</th><th></th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="5" class="loading">読み込み中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB: 出席・請求 ===== -->
+<div class="tab-content" id="tab-attend">
+  <div class="card">
+    <div class="flex-b" style="margin-bottom:14px;">
+      <div class="card-title" style="margin:0;border:none;padding:0;">📅 月別出席・請求</div>
+      <div class="month-tabs" id="monthTabs"></div>
+    </div>
+    <div id="attendArea"><div class="empty">データなし</div></div>
+  </div>
+</div>
+
+<!-- ===== TAB: ランキング ===== -->
+<div class="tab-content" id="tab-rank">
+  <div class="card">
+    <div class="flex-b" style="margin-bottom:14px;">
+      <div class="card-title" style="margin:0;border:none;padding:0;">🏆 杯数ランキング</div>
+      <select id="rankType" onchange="renderRanking()" style="border:1.5px solid var(--gray-200);border-radius:8px;padding:6px 10px;font-size:12px;">
+        <option value="total">累計杯数</option>
+        <option value="avg">平均杯数</option>
+        <option value="count">参加回数</option>
+      </select>
+    </div>
+    <ul class="rank-list" id="rankList"><li class="empty">データなし</li></ul>
+  </div>
+</div>
+
+<!-- ===== TAB: BMI ===== -->
+<div class="tab-content" id="tab-bmi">
+  <div class="card">
+    <div class="card-title">📏 BMI計測入力</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:14px;">
+      <div class="fg">
+        <label>選手</label>
+        <select id="bmi-player"><option value="">-- 選択 --</option></select>
+      </div>
+      <div class="fg">
+        <label>計測日</label>
+        <input type="date" id="bmi-date">
+      </div>
+      <div class="fg">
+        <label>身長 (cm)</label>
+        <input type="number" id="bmi-h" min="100" max="250" step="0.1" placeholder="170.0">
+      </div>
+      <div class="fg">
+        <label>体重 (kg)</label>
+        <input type="number" id="bmi-w" min="20" max="200" step="0.1" placeholder="65.0">
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="btn btn-primary" onclick="addBMI()">＋ 記録</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-b" style="margin-bottom:14px;">
+      <div class="card-title" style="margin:0;border:none;padding:0;">📊 選手BMI詳細</div>
+      <select id="bmi-detail-player" onchange="showBMIDetail()" style="border:1.5px solid var(--green);border-radius:8px;padding:7px 12px;font-size:13px;">
+        <option value="">-- 選手を選択 --</option>
+      </select>
+    </div>
+    <div id="bmiDetailArea"><div class="empty">選手を選択してください</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 BMI一覧（最新値）</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>選手名</th><th>最新BMI</th><th>目標BMI</th><th>判定</th><th>計測日</th></tr></thead>
+        <tbody id="bmiTableBody"><tr><td colspan="5" class="loading">読み込み中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- EDIT SESSION MODAL -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 記録を編集</div>
+    <input type="hidden" id="edit-sid">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+      <div class="fg"><label>日付</label><input type="date" id="edit-date"></div>
+      <div class="fg"><label>メニュー</label><input type="text" id="edit-menu"></div>
+    </div>
+    <div id="editCupArea" style="margin-bottom:14px;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveEditSession()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const NEWS_BIN   = '6a1ed74af5f4af5e29ad180b';
+const PLAYER_BIN = '6a1e3d81da38895dfe79631b';
+const MKEY = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
+const HEADS = { 'Content-Type':'application/json', 'X-Master-Key': MKEY, 'X-Bin-Meta':'false' };
+const PRICE = 900;
+
+// ===== STATE =====
+let data = { sessions: [], bmiRecords: [] };
+// sessions: [{ id, date, menu, cups: { playerId: n, ... } }]
+let players = [];   // 全選手
+let jyPlayers = []; // JYのみ
+let saveTimer = null;
+let currentMonth = '';
+
+// ===== BMI TARGETS =====
+const BMI_F = { U13F:19.0,U13:19.5,U14F:20.0,U14:20.5,U15:21.0,U16:22.0,U17:22.0,U18:22.5,U19:23.0,U20:23.5 };
+const BMI_GK = { U13F:20.5,U13:20.5,U14F:21.5,U14:21.5,U15:21.5,U16:22.5,U17:23.0,U18:23.5,U19:23.5,U20:24.0 };
+
+function isJY(p) {
+  const cat = (p.category||'').replace(/\s/g,'').toUpperCase();
+  const team = (p.team||'').toUpperCase();
+  const role = (p.role||p.type||'').toLowerCase();
+  if (['staff','スタッフ','coach','コーチ'].includes(role)) return true;
+  const jyCats = ['U13F','U13','U14F','U14','U15','U16','U17','U18'];
+  if (jyCats.some(c => cat.includes(c))) return true;
+  if (team.includes('JY') || team.includes('JUNIORYOUTH') || team.includes('ジュニアユース')) return true;
+  return false;
+}
+
+function pid(p) { return p.id || p.name; }
+
+// ===== INIT =====
+async function init() {
+  setSave('読み込み中...','');
+  document.getElementById('in-date').value = today();
+  document.getElementById('bmi-date').value = today();
+  await loadPlayers();
+  await loadData();
+  renderAll();
+  setSave('✓ 同期済み','saved');
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+async function loadPlayers() {
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${PLAYER_BIN}/latest`,{headers:{'X-Master-Key':MKEY,'X-Bin-Meta':'false'}});
+    const d = await r.json();
+    players = Array.isArray(d) ? d : (d.players||[]);
+    jyPlayers = players.filter(isJY);
+    if (!jyPlayers.length) jyPlayers = players;
+    buildCupInputArea();
+    buildPlayerSelects();
+  } catch(e) { toast('選手データ読み込み失敗',true); }
+}
+
+async function loadData() {
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}/latest`,{headers:{'X-Master-Key':MKEY,'X-Bin-Meta':'false'}});
+    const d = await r.json();
+    if (d.shokudo) {
+      data.sessions   = d.shokudo.sessions   || [];
+      data.bmiRecords = d.shokudo.bmiRecords || [];
+    }
+  } catch(e) { toast('データ読み込み失敗',true); }
+}
+
+async function saveData() {
+  setSave('保存中...','saving');
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}/latest`,{headers:{'X-Master-Key':MKEY,'X-Bin-Meta':'false'}});
+    const ex = await r.json();
+    const payload = { ...ex, shokudo: data };
+    const w = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}`,{method:'PUT',headers:HEADS,body:JSON.stringify(payload)});
+    if (!w.ok) throw 0;
+    setSave('✓ 保存済み','saved');
+  } catch(e) { setSave('⚠ 保存失敗',''); toast('保存失敗',true); }
+}
+
+function sched() { clearTimeout(saveTimer); saveTimer = setTimeout(saveData, 900); }
+
+// ===== UI HELPERS =====
+function setSave(t,c) { const el=document.getElementById('saveStatus'); el.textContent=t; el.className='save-status '+c; }
+function toast(msg,err=false) {
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast'+(err?' err':''); t.textContent=msg; c.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+function switchTab(name,btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='attend') renderAttend();
+  if (name==='rank') renderRanking();
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+document.getElementById('editModal').addEventListener('click',e=>{ if(e.target===document.getElementById('editModal')) closeModal(); });
+
+// ===== CUP INPUT AREA =====
+function buildCupInputArea() {
+  const area = document.getElementById('cupInputArea');
+  if (!jyPlayers.length) { area.innerHTML='<div class="empty">選手なし</div>'; return; }
+  const sorted = [...jyPlayers].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  area.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
+      ${sorted.map(p=>`
+        <div style="display:flex;align-items:center;gap:8px;background:var(--gray-50);border-radius:10px;padding:10px 12px;">
+          <span style="flex:1;font-size:14px;font-weight:500;">${p.name}</span>
+          <input type="number" min="0" step="0.5" placeholder="0"
+            class="cup-input" id="cup-${safeId(pid(p))}"
+            oninput="onCupChange(this)">
+          <span style="font-size:12px;color:var(--gray-400);">杯</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function onCupChange(el) {
+  const v = el.value;
+  el.classList.toggle('has-val', v !== '' && parseFloat(v) > 0);
+}
+
+function safeId(s) { return (s||'').replace(/[^a-zA-Z0-9]/g,'_'); }
+
+function clearInputForm() {
+  document.getElementById('in-menu').value = '';
+  document.getElementById('in-date').value = today();
+  jyPlayers.forEach(p => {
+    const el = document.getElementById('cup-'+safeId(pid(p)));
+    if (el) { el.value=''; el.classList.remove('has-val'); }
+  });
+}
+
+// ===== SAVE SESSION =====
+function saveSession() {
+  const date = document.getElementById('in-date').value;
+  const menu = document.getElementById('in-menu').value.trim();
+  if (!date) { toast('日付を入力してください',true); return; }
+
+  const cups = {};
+  let anyInput = false;
+  jyPlayers.forEach(p => {
+    const el = document.getElementById('cup-'+safeId(pid(p)));
+    if (!el) return;
+    const v = parseFloat(el.value);
+    if (!isNaN(v) && v > 0) { cups[pid(p)] = v; anyInput = true; }
+  });
+  if (!anyInput && !menu) { toast('メニューか杯数を入力してください',true); return; }
+
+  // 同じ日付の記録があれば上書き確認
+  const existing = data.sessions.findIndex(s => s.date === date);
+  if (existing >= 0) {
+    if (!confirm(`${date} の記録が既にあります。上書きしますか？`)) return;
+    data.sessions[existing] = { ...data.sessions[existing], menu, cups };
+  } else {
+    data.sessions.push({ id: Date.now().toString(), date, menu, cups });
+  }
+  data.sessions.sort((a,b)=>b.date.localeCompare(a.date));
+  clearInputForm();
+  renderAll();
+  sched();
+  toast('保存しました ✓');
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  renderHistory();
+  renderRanking();
+  renderBMITable();
+  buildMonthTabs();
+}
+
+// ===== HISTORY =====
+function renderHistory() {
+  const tbody = document.getElementById('historyBody');
+  if (!data.sessions.length) { tbody.innerHTML='<tr><td colspan="5" class="empty">記録なし</td></tr>'; return; }
+  tbody.innerHTML = data.sessions.slice(0,30).map(s => {
+    const totalCups = Object.values(s.cups||{}).reduce((a,b)=>a+b,0);
+    const parts = Object.keys(s.cups||{}).length;
+    return `
+      <tr>
+        <td>${s.date}</td>
+        <td>${s.menu||'−'}</td>
+        <td class="ctr">${parts}名</td>
+        <td class="num">${totalCups.toFixed(1)}</td>
+        <td>
+          <div class="flex">
+            <button class="btn btn-outline btn-sm" onclick="openEdit('${s.id}')">編集</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSession('${s.id}')">削除</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function deleteSession(id) {
+  if (!confirm('削除しますか？')) return;
+  data.sessions = data.sessions.filter(s=>s.id!==id);
+  renderAll();
+  sched();
+  toast('削除しました');
+}
+
+function openEdit(id) {
+  const s = data.sessions.find(x=>x.id===id);
+  if (!s) return;
+  document.getElementById('edit-sid').value = id;
+  document.getElementById('edit-date').value = s.date;
+  document.getElementById('edit-menu').value = s.menu||'';
+
+  const sorted = [...jyPlayers].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  document.getElementById('editCupArea').innerHTML = `
+    <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:8px;">杯数</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+      ${sorted.map(p=>`
+        <div style="display:flex;align-items:center;gap:8px;background:var(--gray-50);border-radius:8px;padding:8px 10px;">
+          <span style="flex:1;font-size:13px;">${p.name}</span>
+          <input type="number" min="0" step="0.5" placeholder="0"
+            class="cup-input" id="ecup-${safeId(pid(p))}"
+            value="${(s.cups||{})[pid(p)]||''}"
+            oninput="onCupChange(this)"
+            style="width:56px;">
+        </div>
+      `).join('')}
+    </div>
+  `;
+  // 有値セルに色付け
+  sorted.forEach(p=>{
+    const el = document.getElementById('ecup-'+safeId(pid(p)));
+    if (el && el.value) el.classList.add('has-val');
+  });
+  document.getElementById('editModal').classList.add('open');
+}
+
+function saveEditSession() {
+  const id = document.getElementById('edit-sid').value;
+  const idx = data.sessions.findIndex(s=>s.id===id);
+  if (idx<0) return;
+  const cups = {};
+  jyPlayers.forEach(p=>{
+    const el = document.getElementById('ecup-'+safeId(pid(p)));
+    if (!el) return;
+    const v = parseFloat(el.value);
+    if (!isNaN(v) && v>0) cups[pid(p)] = v;
+  });
+  data.sessions[idx] = {
+    ...data.sessions[idx],
+    date: document.getElementById('edit-date').value,
+    menu: document.getElementById('edit-menu').value.trim(),
+    cups
+  };
+  data.sessions.sort((a,b)=>b.date.localeCompare(a.date));
+  closeModal();
+  renderAll();
+  sched();
+  toast('更新しました');
+}
+
+// ===== ATTEND =====
+function buildMonthTabs() {
+  const months = [...new Set(data.sessions.map(s=>s.date.slice(0,7)))].sort((a,b)=>b.localeCompare(a));
+  const tabs = document.getElementById('monthTabs');
+  if (!months.length) { tabs.innerHTML=''; return; }
+  if (!currentMonth || !months.includes(currentMonth)) currentMonth = months[0];
+  tabs.innerHTML = months.map(m=>`
+    <button class="month-btn ${m===currentMonth?'active':''}" onclick="selectMonth('${m}')">${m.replace('-','年')}月</button>
+  `).join('');
+}
+
+function selectMonth(m) {
+  currentMonth = m;
+  buildMonthTabs();
+  renderAttend();
+}
+
+function renderAttend() {
+  buildMonthTabs();
+  const area = document.getElementById('attendArea');
+  if (!currentMonth) { area.innerHTML='<div class="empty">記録なし</div>'; return; }
+
+  const sessions = data.sessions.filter(s=>s.date.startsWith(currentMonth)).sort((a,b)=>a.date.localeCompare(b.date));
+  if (!sessions.length) { area.innerHTML='<div class="empty">この月の記録なし</div>'; return; }
+
+  const sorted = [...jyPlayers].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+
+  // 日付ヘッダー (〇月〇日)
+  const dateCols = sessions.map(s=>{
+    const [,m,d] = s.date.split('-');
+    return `${parseInt(m)}/${parseInt(d)}`;
+  });
+
+  const rows = sorted.map(p=>{
+    const id = pid(p);
+    let attended = 0;
+    const cells = sessions.map(s=>{
+      const c = (s.cups||{})[id];
+      if (c != null && c > 0) { attended++; return `<td class="ctr"><span class="att-o">○</span><br><span style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--green)">${c}杯</span></td>`; }
+      return `<td class="ctr"><span class="att-x">−</span></td>`;
+    }).join('');
+    const amount = attended * PRICE;
+    return `
+      <tr>
+        <td style="font-weight:600;white-space:nowrap;">${p.name}</td>
+        ${cells}
+        <td class="num" style="font-weight:700;">${attended}回</td>
+        <td class="num" style="color:var(--gold);font-weight:700;">¥${amount.toLocaleString()}</td>
+      </tr>`;
+  });
+
+  area.innerHTML = `
+    <div class="tbl-wrap">
+      <table class="attend-table">
+        <thead>
+          <tr>
+            <th style="min-width:80px;">名前</th>
+            ${dateCols.map(d=>`<th class="ctr">${d}</th>`).join('')}
+            <th class="ctr">出席</th>
+            <th style="text-align:right;">金額</th>
+          </tr>
+          <tr style="background:rgba(255,255,255,0.15);">
+            <th style="font-size:11px;color:rgba(255,255,255,0.8);">メニュー</th>
+            ${sessions.map(s=>`<th style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:400;">${(s.menu||'').slice(0,8)}</th>`).join('')}
+            <th colspan="2"></th>
+          </tr>
+        </thead>
+        <tbody>${rows.join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ===== RANKING =====
+function getStats() {
+  const map = {};
+  jyPlayers.forEach(p=>{ map[pid(p)] = { name:p.name, count:0, total:0, records:[] }; });
+  data.sessions.forEach(s=>{
+    Object.entries(s.cups||{}).forEach(([id,cups])=>{
+      if (!map[id]) map[id] = { name:id, count:0, total:0, records:[] };
+      map[id].count++;
+      map[id].total += cups;
+      map[id].records.push({ date:s.date, menu:s.menu, cups });
+    });
+  });
+  Object.values(map).forEach(s=>{ s.avg = s.count>0 ? +(s.total/s.count).toFixed(2) : 0; });
+  return map;
+}
+
+function renderRanking() {
+  const type = document.getElementById('rankType').value;
+  const stats = Object.values(getStats()).filter(s=>s.count>0);
+  stats.sort((a,b)=>b[type]-a[type]);
+  const list = document.getElementById('rankList');
+  if (!stats.length) { list.innerHTML='<li class="empty">データなし</li>'; return; }
+  const max = stats[0][type]||1;
+  list.innerHTML = stats.map((s,i)=>`
+    <li class="rank-item">
+      <span class="rank-n">${i+1}</span>
+      <span class="rank-name">${s.name}</span>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(s[type]/max*100).toFixed(1)}%"></div></div>
+      <span class="rank-val">${type==='count'?s[type]+'回':s[type]+'杯'}</span>
+    </li>
+  `).join('');
+}
+
+// ===== BMI =====
+function buildPlayerSelects() {
+  const sorted = [...jyPlayers].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  ['bmi-player','bmi-detail-player'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const v = sel.value;
+    sel.innerHTML = '<option value="">-- 選択 --</option>';
+    sorted.forEach(p=>{
+      const o = document.createElement('option');
+      o.value = pid(p); o.textContent = p.name;
+      sel.appendChild(o);
+    });
+    if (v) sel.value = v;
+  });
+}
+
+function getBMITarget(p) {
+  if (!p) return null;
+  const isGK = (p.position||'').toUpperCase()==='GK';
+  const tbl = isGK ? BMI_GK : BMI_F;
+  const cat = (p.category||'').replace(/\s/g,'');
+  return tbl[cat]||null;
+}
+
+function bmiStatus(bmi,target) {
+  if (!target) return {lbl:'-',cls:''};
+  if (bmi<17.5) return {lbl:'低体重',cls:'bmi-under'};
+  if (bmi<target-1.5) return {lbl:'目標以下',cls:'bmi-under'};
+  if (bmi<=target+1.5) return {lbl:'目標範囲',cls:'bmi-normal'};
+  if (bmi<=target+3) return {lbl:'やや超過',cls:'bmi-over'};
+  return {lbl:'超過',cls:'bmi-obese'};
+}
+
+function addBMI() {
+  const pid2 = document.getElementById('bmi-player').value;
+  const date = document.getElementById('bmi-date').value;
+  const h = parseFloat(document.getElementById('bmi-h').value);
+  const w = parseFloat(document.getElementById('bmi-w').value);
+  if (!pid2||!date||isNaN(h)||isNaN(w)) { toast('全て入力してください',true); return; }
+  const bmi = +(w/((h/100)**2)).toFixed(2);
+  const player = jyPlayers.find(p=>pid(p)===pid2);
+  data.bmiRecords.push({ id:Date.now().toString(), playerId:pid2, playerName:player?.name||pid2, date, height:h, weight:w, bmi });
+  document.getElementById('bmi-h').value='';
+  document.getElementById('bmi-w').value='';
+  renderBMITable();
+  const cur = document.getElementById('bmi-detail-player').value;
+  if (cur===pid2) showBMIDetail();
+  sched();
+  toast(`BMI ${bmi} を記録しました`);
+}
+
+function renderBMITable() {
+  const tbody = document.getElementById('bmiTableBody');
+  const latest = {};
+  data.bmiRecords.forEach(r=>{ if(!latest[r.playerId]||r.date>latest[r.playerId].date) latest[r.playerId]=r; });
+  const rows = Object.values(latest).sort((a,b)=>(a.playerName||'').localeCompare(b.playerName||'','ja'));
+  if (!rows.length) { tbody.innerHTML='<tr><td colspan="5" class="empty">データなし</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r=>{
+    const player = jyPlayers.find(p=>pid(p)===r.playerId);
+    const tgt = getBMITarget(player);
+    const st = bmiStatus(r.bmi,tgt);
+    return `
+      <tr>
+        <td><strong>${r.playerName}</strong></td>
+        <td class="num">${r.bmi}</td>
+        <td class="num">${tgt||'−'}</td>
+        <td class="ctr"><span class="bmi-badge ${st.cls}">${st.lbl}</span></td>
+        <td style="color:var(--gray-400);font-size:12px;">${r.date}</td>
+      </tr>`;
+  }).join('');
+}
+
+function showBMIDetail() {
+  const pid2 = document.getElementById('bmi-detail-player').value;
+  const area = document.getElementById('bmiDetailArea');
+  if (!pid2) { area.innerHTML='<div class="empty">選手を選択してください</div>'; return; }
+  const records = data.bmiRecords.filter(r=>r.playerId===pid2).sort((a,b)=>b.date.localeCompare(a.date));
+  if (!records.length) { area.innerHTML='<div class="empty">BMI記録がありません</div>'; return; }
+  const latest = records[0];
+  const player = jyPlayers.find(p=>pid(p)===pid2);
+  const tgt = getBMITarget(player);
+  const st = bmiStatus(latest.bmi,tgt);
+  const pct = Math.min(Math.max((latest.bmi-15)/20*100,0),100);
+  area.innerHTML = `
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:16px;">
+      <div style="text-align:center;">
+        <div class="bmi-big">${latest.bmi}</div>
+        <div style="margin-top:6px;"><span class="bmi-badge ${st.cls}">${st.lbl}</span></div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:13px;color:var(--gray-600);margin-bottom:4px;">
+          身長 ${latest.height}cm / 体重 ${latest.weight}kg
+          ${tgt?`｜ 目標BMI: <strong>${tgt}</strong>`:''}
+        </div>
+        <div class="bmi-meter"><div class="bmi-ptr" style="left:${pct}%"></div></div>
+        <div class="bmi-labels"><span>15</span><span>低体重</span><span>標準</span><span>過体重</span><span>35</span></div>
+        ${tgt?`<div style="margin-top:6px;font-size:12px;color:var(--gray-600);">差分: <strong style="color:${latest.bmi>tgt?'var(--red)':'var(--green)'}">${(latest.bmi-tgt>0?'+':'')}${(latest.bmi-tgt).toFixed(2)}</strong></div>`:''}
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>計測日</th><th>身長</th><th>体重</th><th>BMI</th><th>判定</th><th></th></tr></thead>
+        <tbody>
+          ${records.map(r=>{const s2=bmiStatus(r.bmi,tgt);return`
+            <tr>
+              <td>${r.date}</td><td>${r.height}cm</td><td>${r.weight}kg</td>
+              <td class="num">${r.bmi}</td>
+              <td class="ctr"><span class="bmi-badge ${s2.cls}">${s2.lbl}</span></td>
+              <td><button class="btn btn-danger btn-sm" onclick="deleteBMI('${r.id}')">削除</button></td>
+            </tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function deleteBMI(id) {
+  if (!confirm('削除しますか？')) return;
+  data.bmiRecords = data.bmiRecords.filter(r=>r.id!==id);
+  showBMIDetail(); renderBMITable(); sched(); toast('削除しました');
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>
