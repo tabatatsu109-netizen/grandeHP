@@ -287,6 +287,16 @@
 </div>
 
 <script>
+ (function(){
+  if(new URLSearchParams(location.search).get('from')==='portal'){
+    document.addEventListener('DOMContentLoaded', function(){
+      var login = document.getElementById('loginScreen');
+      if(login) login.style.display = 'none';
+      if(typeof init === 'function') init();
+      if(typeof startApp === 'function') startApp('admin');
+    });
+  }
+})();
 const API_KEY  = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
 const NEWS_BIN = '6a1ed74af5f4af5e29ad180b';
 
