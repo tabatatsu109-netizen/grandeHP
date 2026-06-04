@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スポンサー・パートナー│八ヶ岳グランデフットボールクラブ</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --green:#1A6B3C; --green-dark:#0F4526; --green-deep:#071A0F;
+    --gold:#D4A820; --gold-light:#E8C040;
+    --white:#FFFFFF; --off-white:#F4F7FB;
+    --gray:#8A9BB0; --text:#0D1B2A; --border:#DDE4EF;
+  }
+  body { font-family:'Noto Sans JP',sans-serif; background:var(--white); color:var(--text); }
+
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(7,26,15,0.97); border-bottom:2px solid var(--gold); height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 2rem; }
+  .nav-logo { display:flex; align-items:center; gap:12px; text-decoration:none; }
+  .nav-logo img { height:36px; }
+  .nav-logo span { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:900; color:var(--white); letter-spacing:1px; line-height:1.2; }
+  .nav-logo span em { color:var(--gold); font-style:normal; display:block; font-size:11px; letter-spacing:2px; }
+  .nav-back { color:rgba(255,255,255,0.6); font-size:13px; text-decoration:none; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+  .nav-back:hover { color:var(--gold); }
+
+  .hero { background:var(--green-deep); padding:120px 2rem 72px; text-align:center; border-bottom:2px solid var(--gold); }
+  .hero-label { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:4px; color:var(--gold); margin-bottom:16px; }
+  .hero h1 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(36px,6vw,64px); font-weight:900; color:var(--white); line-height:1.1; margin-bottom:16px; }
+  .hero h1 em { color:var(--gold); font-style:normal; }
+  .hero p { font-size:14px; color:rgba(255,255,255,0.6); line-height:1.9; max-width:560px; margin:0 auto; }
+
+  .section { padding:72px 2rem; max-width:960px; margin:0 auto; }
+  .section-label { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:4px; color:var(--gold); margin-bottom:8px; }
+  .section-title { font-family:'Barlow Condensed',sans-serif; font-size:clamp(28px,4vw,42px); font-weight:900; color:var(--text); margin-bottom:12px; }
+  .section-title em { color:var(--green); font-style:normal; }
+  .section-desc { font-size:14px; color:var(--gray); line-height:1.9; margin-bottom:48px; max-width:600px; }
+
+  /* スポンサーカード */
+  .sponsor-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:24px; margin-bottom:16px; }
+  .sponsor-card { border:2px solid var(--gold); background:var(--white); display:flex; flex-direction:column; transition:transform 0.2s, box-shadow 0.2s; }
+  .sponsor-card:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,0.1); }
+  .sponsor-card-top { background:var(--green-deep); padding:32px 24px; display:flex; align-items:center; justify-content:center; min-height:120px; }
+  .sponsor-card-top .sponsor-name { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; color:var(--gold); letter-spacing:2px; text-align:center; }
+  .sponsor-card-body { padding:20px 24px; flex:1; display:flex; flex-direction:column; gap:12px; }
+  .sponsor-badge { display:inline-block; background:var(--gold); color:var(--green-deep); font-size:10px; font-weight:900; padding:3px 10px; letter-spacing:2px; font-family:'Barlow Condensed',sans-serif; align-self:flex-start; }
+  .sponsor-link { display:inline-flex; align-items:center; gap:6px; color:var(--green); font-size:13px; font-weight:700; text-decoration:none; margin-top:auto; padding-top:8px; border-top:1px solid var(--border); transition:color 0.2s; }
+  .sponsor-link:hover { color:var(--green-dark); }
+  .sponsor-link::after { content:'→'; }
+
+  /* パートナーカード */
+  .partner-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:20px; }
+  .partner-card { border:1px solid var(--border); background:var(--white); padding:24px; display:flex; flex-direction:column; gap:10px; transition:transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+  .partner-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.08); border-color:var(--green); }
+  .partner-badge { display:inline-block; background:var(--green); color:var(--white); font-size:10px; font-weight:900; padding:3px 10px; letter-spacing:2px; font-family:'Barlow Condensed',sans-serif; align-self:flex-start; }
+  .partner-badge.supporter { background:var(--gray); }
+  .partner-name { font-size:16px; font-weight:900; color:var(--text); line-height:1.4; }
+  .partner-link { display:inline-flex; align-items:center; gap:5px; color:var(--green); font-size:12px; font-weight:700; text-decoration:none; margin-top:auto; padding-top:8px; border-top:1px solid var(--border); transition:color 0.2s; }
+  .partner-link:hover { color:var(--green-dark); }
+  .partner-link::after { content:'→'; }
+
+  /* GRANDEを応援するバナー */
+  .support-banner { background:var(--green); padding:40px 2rem; text-align:center; margin:0; }
+  .support-banner h2 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(22px,4vw,32px); font-weight:900; color:var(--white); margin-bottom:10px; }
+  .support-banner p { font-size:13px; color:rgba(255,255,255,0.8); margin-bottom:20px; }
+  .support-banner a { display:inline-block; background:var(--gold); color:var(--green-deep); padding:12px 32px; font-size:14px; font-weight:900; text-decoration:none; font-family:'Noto Sans JP',sans-serif; transition:background 0.2s; }
+  .support-banner a:hover { background:var(--gold-light); }
+
+  .cta-section { background:var(--green-deep); padding:64px 2rem; text-align:center; border-top:2px solid var(--gold); }
+  .cta-label { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:4px; color:var(--gold); margin-bottom:12px; }
+  .cta-title { font-family:'Barlow Condensed',sans-serif; font-size:clamp(24px,4vw,36px); font-weight:900; color:var(--white); margin-bottom:12px; }
+  .cta-desc { font-size:13px; color:rgba(255,255,255,0.6); margin-bottom:28px; }
+  .cta-btn { display:inline-block; background:var(--gold); color:var(--green-deep); padding:14px 36px; font-size:14px; font-weight:900; text-decoration:none; font-family:'Noto Sans JP',sans-serif; transition:background 0.2s; }
+  .cta-btn:hover { background:var(--gold-light); }
+
+  .divider { border:none; border-top:1px solid var(--border); margin:0; }
+  footer { background:var(--green-deep); padding:32px 2rem; text-align:center; }
+  footer p { font-size:12px; color:rgba(255,255,255,0.4); }
+
+  @media(max-width:600px){
+    .section { padding:48px 1.2rem; }
+    .hero { padding:100px 1.2rem 56px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="grande_homepage.html">
+    <img src="emblem.png" alt="GRANDE FC">
+    <span>GRANDE FC <em>八ヶ岳グランデ</em></span>
+  </a>
+  <a class="nav-back" href="grande_homepage.html">← ホームへ戻る</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-label">SPONSOR & PARTNER</div>
+  <h1>スポンサー・<em>パートナー</em></h1>
+  <p>八ヶ岳グランデフットボールクラブの活動を支えてくださっている企業・団体の皆様をご紹介します。温かいご支援に、心より感謝申し上げます。</p>
+</div>
+
+<!-- スポンサー -->
+<div class="section">
+  <div class="section-label">OFFICIAL SPONSOR</div>
+  <div class="section-title">オフィシャル<em>スポンサー</em></div>
+  <p class="section-desc">クラブの活動を力強くサポートしてくださっているオフィシャルスポンサーです。</p>
+  <div class="sponsor-grid">
+    <div class="sponsor-card">
+      <div class="sponsor-card-top"><div class="sponsor-name">ATHLETA</div></div>
+      <div class="sponsor-card-body">
+        <span class="sponsor-badge">OFFICIAL SPONSOR</span>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">アスレタ株式会社</div>
+        <div style="font-size:13px;color:var(--gray);line-height:1.7;">サッカー・フットサル専門ブランド。高品質なウェアとシューズでGRANDE FCをサポートしています。</div>
+        <a class="sponsor-link" href="https://www.athleta.co.jp/" target="_blank" rel="noopener">公式サイトを見る</a>
+      </div>
+    </div>
+    <div class="sponsor-card">
+      <div class="sponsor-card-top"><div class="sponsor-name">NOF</div></div>
+      <div class="sponsor-card-body">
+        <span class="sponsor-badge">OFFICIAL SPONSOR</span>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">NOF FOOTBALL</div>
+        <div style="font-size:13px;color:var(--gray);line-height:1.7;">サッカー用品・グッズを取り扱うNOF FOOTBALLが、GRANDE FCの活動を応援しています。</div>
+        <a class="sponsor-link" href="https://nofootball.base.shop/" target="_blank" rel="noopener">公式サイトを見る</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- パートナー -->
+<div class="section">
+  <div class="section-label">OFFICIAL PARTNER</div>
+  <div class="section-title">オフィシャル<em>パートナー</em></div>
+  <p class="section-desc">地域とともにGRANDE FCを支えてくださっているパートナー企業・団体です。</p>
+  <div class="partner-grid">
+    <div class="partner-card">
+      <span class="partner-badge">PARTNER</span>
+      <div class="partner-name">ひまわり市場</div>
+      <div style="font-size:13px;color:var(--gray);line-height:1.7;">地域に根ざした食のパートナー。グランデ食堂でも地元食材をご提供いただいています。</div>
+      <a class="partner-link" href="https://himawari-ichiba.com/" target="_blank" rel="noopener">公式サイトを見る</a>
+    </div>
+    <div class="partner-card">
+      <span class="partner-badge">PARTNER</span>
+      <div class="partner-name">株式会社アルプス</div>
+      <div style="font-size:13px;color:var(--gray);line-height:1.7;">地域の発展と選手たちの未来を応援してくださっているパートナー企業です。</div>
+      <a class="partner-link" href="https://www.alps-hs.co.jp/" target="_blank" rel="noopener">公式サイトを見る</a>
+    </div>
+    <div class="partner-card">
+      <span class="partner-badge">PARTNER</span>
+      <div class="partner-name">シミックウエル株式会社</div>
+      <div style="font-size:13px;color:var(--gray);line-height:1.7;">選手の健康と体づくりをサポートしてくださっているウェルネスパートナーです。</div>
+      <a class="partner-link" href="https://cmic-well.com/" target="_blank" rel="noopener">公式サイトを見る</a>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- オフィシャルサポーター -->
+<div class="section">
+  <div class="section-label">OFFICIAL SUPPORTER</div>
+  <div class="section-title">オフィシャル<em>サポーター</em></div>
+  <p class="section-desc">GRANDEの活動を陰から支えてくださっているサポーター企業・団体です。</p>
+  <div class="partner-grid">
+    <div class="partner-card">
+      <span class="partner-badge supporter">SUPPORTER</span>
+      <div class="partner-name">環境管理コンサルタント</div>
+      <div style="font-size:13px;color:var(--gray);line-height:1.7;">環境・安全分野の専門家として、GRANDEの活動環境づくりを支えてくださっています。</div>
+      <a class="partner-link" href="http://kkcinc.co.jp/" target="_blank" rel="noopener">公式サイトを見る</a>
+    </div>
+  </div>
+</div>
+
+<!-- GRANDEを応援するバナー -->
+<div class="support-banner">
+  <h2>GRANDEを応援する</h2>
+  <p>お金だけでなく、時間・経験・モノ・つながりでも応援できます。</p>
+  <a href="grande_support.html">応援の方法を見る →</a>
+</div>
+
+<div class="cta-section">
+  <div class="cta-label">CONTACT</div>
+  <div class="cta-title">スポンサー・パートナーについて</div>
+  <p class="cta-desc">ご支援・ご協賛についてのお問い合わせはこちらから。</p>
+  <a class="cta-btn" href="grande_contact.html">お問い合わせはこちら</a>
+</div>
+
+<footer>
+  <p>© 2026 Yatsugatake Grande Football Club. All Rights Reserved.</p>
+</footer>
+</body>
+</html>
