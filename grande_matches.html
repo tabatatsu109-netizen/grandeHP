@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>試合結果管理│GRANDE FC</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --green:#1A6B3C; --green-dark:#0F4526; --green-deep:#071A0F;
+    --gold:#D4A820; --white:#FFFFFF; --off-white:#F4F7FB;
+    --gray:#8A9BB0; --text:#0D1B2A; --border:#DDE4EF;
+    --win:#1A6B3C; --draw:#D4A820; --lose:#C0392B;
+  }
+  body { font-family:'Noto Sans JP',sans-serif; background:var(--off-white); color:var(--text); min-height:100vh; }
+
+  header { background:var(--green-deep); padding:0 1.4rem; height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid var(--gold); position:sticky; top:0; z-index:100; }
+  .header-title { display:flex; align-items:center; gap:10px; }
+  .header-title .icon { width:32px; height:32px; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .header-title h1 { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:900; color:var(--white); letter-spacing:1px; }
+  .header-title h1 span { color:var(--gold); }
+
+  .pw-screen { position:fixed; inset:0; z-index:999; background:var(--green-deep); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .pw-card { background:rgba(255,255,255,0.04); border:1px solid rgba(212,168,32,0.2); width:100%; max-width:340px; padding:32px 24px; }
+  .pw-icon { font-size:36px; text-align:center; margin-bottom:12px; }
+  .pw-title { font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:900; color:var(--white); text-align:center; margin-bottom:18px; }
+  .pw-title span { color:var(--gold); }
+  .pw-input { width:100%; padding:12px 13px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); color:var(--white); font-size:16px; font-family:'Noto Sans JP',sans-serif; outline:none; margin-bottom:10px; border-radius:0; }
+  .pw-input:focus { border-color:var(--gold); }
+  .pw-input.shake { animation:shake 0.4s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+  .pw-error { font-size:12px; color:#FF8A8A; min-height:16px; margin-bottom:12px; }
+  .pw-btn { width:100%; padding:13px; background:var(--gold); color:var(--green-deep); border:none; font-size:14px; font-weight:900; font-family:'Noto Sans JP',sans-serif; cursor:pointer; }
+
+  .container { max-width:1000px; margin:0 auto; padding:20px 16px; }
+
+  /* サマリーカード */
+  .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+  @media(max-width:600px){ .summary-grid{grid-template-columns:repeat(2,1fr);} }
+  .summary-card { background:var(--white); border:1px solid var(--border); padding:16px; text-align:center; }
+  .summary-card .label { font-size:11px; color:var(--gray); font-weight:700; margin-bottom:6px; letter-spacing:0.5px; }
+  .summary-card .value { font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:900; color:var(--text); }
+  .summary-card .value.win { color:var(--win); }
+  .summary-card .value.draw { color:var(--draw); }
+  .summary-card .value.lose { color:var(--lose); }
+  .summary-card .sub { font-size:11px; color:var(--gray); margin-top:4px; }
+
+  /* フィルター */
+  .filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-select { padding:8px 12px; border:1px solid var(--border); background:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none; border-radius:0; appearance:none; cursor:pointer; }
+  .filter-select:focus { border-color:var(--green); }
+
+  /* タブ */
+  .tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:2px solid var(--border); }
+  .tab { padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.2s; }
+  .tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+  /* 試合一覧 */
+  .match-table { width:100%; border-collapse:collapse; background:var(--white); }
+  .match-table th { background:var(--green-deep); color:var(--white); padding:10px 12px; font-size:12px; font-weight:700; text-align:left; }
+  .match-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--border); }
+  .match-table tr:hover td { background:#F8FBF9; }
+  @media(max-width:600px){
+    .match-table { display:block; overflow-x:auto; }
+  }
+
+  .badge { display:inline-block; padding:3px 8px; font-size:11px; font-weight:700; font-family:'Barlow Condensed',sans-serif; letter-spacing:1px; }
+  .badge-win  { background:#E8F5EE; color:var(--win); }
+  .badge-draw { background:#FEF9EC; color:#B8860B; }
+  .badge-lose { background:#FDECEA; color:var(--lose); }
+
+  /* 得点者ランキング */
+  .ranking-table { width:100%; border-collapse:collapse; background:var(--white); }
+  .ranking-table th { background:var(--green-deep); color:var(--white); padding:10px 12px; font-size:12px; font-weight:700; text-align:left; }
+  .ranking-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--border); }
+  .rank-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:900; color:var(--gray); }
+  .rank-num.gold { color:#D4A820; }
+  .rank-num.silver { color:#A0A0A0; }
+  .rank-num.bronze { color:#CD7F32; }
+  .rank-bar { height:6px; background:var(--green); margin-top:4px; transition:width 0.5s; }
+
+  /* 大会別成績 */
+  .tournament-table { width:100%; border-collapse:collapse; background:var(--white); }
+  .tournament-table th { background:var(--green-deep); color:var(--white); padding:10px 12px; font-size:12px; font-weight:700; text-align:left; }
+  .tournament-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--border); }
+
+  .empty-msg { text-align:center; padding:48px 20px; color:var(--gray); font-size:14px; }
+
+  .section-title { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:900; color:var(--text); margin-bottom:12px; letter-spacing:0.5px; }
+</style>
+</head>
+<body>
+
+<div class="pw-screen" id="pwScreen">
+  <div class="pw-card">
+    <div class="pw-icon">📊</div>
+    <div class="pw-title">試合結果管理 <span>GRANDE</span></div>
+    <input class="pw-input" type="password" id="pwInput" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')checkPw()">
+    <div class="pw-error" id="pwError"></div>
+    <button class="pw-btn" onclick="checkPw()">ログイン →</button>
+  </div>
+</div>
+
+<header style="display:flex;align-items:center;justify-content:space-between;">
+  <div class="header-title">
+    <div class="icon">📊</div>
+    <h1>試合結果管理 <span>GRANDE FC</span></h1>
+  </div>
+</header>
+
+<div class="container" id="appContainer" style="display:none;">
+
+  <!-- フィルター -->
+  <div class="filters">
+    <select class="filter-select" id="filterCat" onchange="applyFilter()">
+      <option value="">全カテゴリー</option>
+      <option value="ジュニアユース">ジュニアユース</option>
+      <option value="ジュニア">ジュニア</option>
+    </select>
+    <select class="filter-select" id="filterTournament" onchange="applyFilter()">
+      <option value="">全大会</option>
+    </select>
+    <select class="filter-select" id="filterResult" onchange="applyFilter()">
+      <option value="">全結果</option>
+      <option value="勝利">勝利</option>
+      <option value="引き分け">引き分け</option>
+      <option value="敗戦">敗戦</option>
+    </select>
+  </div>
+
+  <!-- サマリー -->
+  <div class="summary-grid" id="summaryGrid"></div>
+
+  <!-- タブ -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('matches')">試合一覧</div>
+    <div class="tab" onclick="switchTab('ranking')">得点者ランキング</div>
+    <div class="tab" onclick="switchTab('tournament')">大会別成績</div>
+  </div>
+
+  <!-- 試合一覧 -->
+  <div id="tab_matches">
+    <div class="section-title" id="matchCount"></div>
+    <div id="matchTableWrap"></div>
+  </div>
+
+  <!-- 得点者ランキング -->
+  <div id="tab_ranking" style="display:none;">
+    <div class="section-title">得点者ランキング</div>
+    <div id="rankingWrap"></div>
+  </div>
+
+  <!-- 大会別成績 -->
+  <div id="tab_tournament" style="display:none;">
+    <div class="section-title">大会別成績</div>
+    <div id="tournamentWrap"></div>
+  </div>
+
+</div>
+
+<script>
+const API_KEY  = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
+const NEWS_BIN = '6a1ed74af5f4af5e29ad180b';
+
+let allMatches = [];
+let filtered = [];
+let currentTab = 'matches';
+
+function checkPw() {
+  const val = document.getElementById('pwInput').value;
+  if (val === 'corazon') {
+    document.getElementById('pwScreen').style.display = 'none';
+    sessionStorage.setItem('grande_matches_auth', '1');
+    initApp();
+  } else {
+    document.getElementById('pwError').textContent = 'パスワードが違います';
+    const inp = document.getElementById('pwInput');
+    inp.classList.add('shake'); inp.value = '';
+    setTimeout(() => inp.classList.remove('shake'), 400);
+  }
+}
+if (sessionStorage.getItem('grande_matches_auth') === '1' ||
+    new URLSearchParams(location.search).get('from') === 'staff') {
+  document.getElementById('pwScreen').style.display = 'none';
+  sessionStorage.setItem('grande_matches_auth', '1');
+  initApp();
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const btn = document.createElement('button');
+    btn.textContent = '← スタッフポータルに戻る';
+    btn.style.cssText = 'background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.85);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:Noto Sans JP,sans-serif;white-space:nowrap;margin-left:auto;';
+    btn.onmouseover = ()=>{ btn.style.background='rgba(255,255,255,0.25)'; };
+    btn.onmouseout  = ()=>{ btn.style.background='rgba(255,255,255,0.12)'; };
+    btn.onclick = ()=>{ window.location.href = 'grande_staff_portal.html'; };
+    const header = document.querySelector('header');
+    if(header) header.appendChild(btn);
+  });
+}
+
+async function initApp() {
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}/latest`, {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const json = await res.json();
+    allMatches = json.record.matches || [];
+    document.getElementById('appContainer').style.display = 'block';
+    buildTournamentFilter();
+    applyFilter();
+  } catch(e) {
+    alert('データの読み込みに失敗しました');
+  }
+}
+
+function buildTournamentFilter() {
+  const tournaments = [...new Set(allMatches.map(m => m.tournament))].sort();
+  const sel = document.getElementById('filterTournament');
+  sel.innerHTML = '<option value="">全大会</option>'
+    + tournaments.map(t => `<option value="${t}">${t}</option>`).join('');
+}
+
+function applyFilter() {
+  const cat        = document.getElementById('filterCat').value;
+  const tournament = document.getElementById('filterTournament').value;
+  const result     = document.getElementById('filterResult').value;
+
+  filtered = allMatches.filter(m => {
+    if (cat && m.category !== cat) return false;
+    if (tournament && m.tournament !== tournament) return false;
+    if (result && m.result !== result) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  renderSummary();
+  renderTab();
+}
+
+function renderSummary() {
+  const wins   = filtered.filter(m => m.result === '勝利').length;
+  const draws  = filtered.filter(m => m.result === '引き分け').length;
+  const losses = filtered.filter(m => m.result === '敗戦').length;
+  const total  = filtered.length;
+  const gf     = filtered.reduce((s,m) => s + (m.goalsFor || 0), 0);
+  const ga     = filtered.reduce((s,m) => s + (m.goalsAgainst || 0), 0);
+  const rate   = total ? Math.round(wins / total * 100) : 0;
+
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="summary-card">
+      <div class="label">試合数</div>
+      <div class="value">${total}</div>
+      <div class="sub">${wins}勝 ${draws}分 ${losses}敗</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">勝率</div>
+      <div class="value win">${rate}%</div>
+      <div class="sub">勝利${wins}試合</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">総得点</div>
+      <div class="value">${gf}</div>
+      <div class="sub">失点${ga}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">得失点差</div>
+      <div class="value ${gf-ga >= 0 ? 'win' : 'lose'}">${gf-ga >= 0 ? '+' : ''}${gf-ga}</div>
+      <div class="sub">1試合平均 ${total ? (gf/total).toFixed(1) : 0}点</div>
+    </div>
+  `;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['matches','ranking','tournament'][i] === tab);
+  });
+  document.getElementById('tab_matches').style.display    = tab === 'matches'    ? 'block' : 'none';
+  document.getElementById('tab_ranking').style.display    = tab === 'ranking'    ? 'block' : 'none';
+  document.getElementById('tab_tournament').style.display = tab === 'tournament' ? 'block' : 'none';
+  renderTab();
+}
+
+function renderTab() {
+  if (currentTab === 'matches')    renderMatches();
+  if (currentTab === 'ranking')    renderRanking();
+  if (currentTab === 'tournament') renderTournament();
+}
+
+function renderMatches() {
+  document.getElementById('matchCount').textContent = `試合一覧（${filtered.length}件）`;
+  if (!filtered.length) {
+    document.getElementById('matchTableWrap').innerHTML = '<div class="empty-msg">試合データがありません</div>';
+    return;
+  }
+  const rows = filtered.map(m => `
+    <tr>
+      <td>${formatDate(m.date)}</td>
+      <td><span style="font-size:11px;color:var(--gray);">${m.category}</span></td>
+      <td>${m.tournament}</td>
+      <td>${m.opponent}</td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;">${m.score}</td>
+      <td><span class="badge badge-${m.result === '勝利' ? 'win' : m.result === '引き分け' ? 'draw' : 'lose'}">${m.result}</span></td>
+      <td style="font-size:12px;color:var(--gray);">${m.scorer || '—'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('matchTableWrap').innerHTML = `
+    <table class="match-table">
+      <thead><tr>
+        <th>日付</th><th>カテゴリー</th><th>大会</th><th>対戦相手</th><th>スコア</th><th>結果</th><th>得点者</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderRanking() {
+  // 得点者を集計（「山田・鈴木」のように複数いる場合は分割）
+  const scorerMap = {};
+  filtered.forEach(m => {
+    if (!m.scorer) return;
+    const names = m.scorer.split(/[・、,，\s]+/).filter(Boolean);
+    names.forEach(name => {
+      scorerMap[name] = (scorerMap[name] || 0) + 1;
+    });
+  });
+
+  const ranking = Object.entries(scorerMap)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 20);
+
+  if (!ranking.length) {
+    document.getElementById('rankingWrap').innerHTML = '<div class="empty-msg">得点者データがありません</div>';
+    return;
+  }
+
+  const maxGoals = ranking[0][1];
+  const rows = ranking.map(([name, goals], i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const barWidth = Math.round(goals / maxGoals * 100);
+    return `
+      <tr>
+        <td style="width:48px;"><span class="rank-num ${rankClass}">${i+1}</span></td>
+        <td style="font-weight:700;">${name}</td>
+        <td style="width:120px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;">${goals}<span style="font-size:12px;font-weight:400;color:var(--gray);margin-left:2px;">点</span></div>
+          <div class="rank-bar" style="width:${barWidth}%"></div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('rankingWrap').innerHTML = `
+    <table class="ranking-table">
+      <thead><tr><th>順位</th><th>名前</th><th>得点</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderTournament() {
+  const tournamentMap = {};
+  filtered.forEach(m => {
+    const key = `${m.tournament}__${m.category}`;
+    if (!tournamentMap[key]) {
+      tournamentMap[key] = { tournament: m.tournament, category: m.category, win:0, draw:0, lose:0, gf:0, ga:0 };
+    }
+    const t = tournamentMap[key];
+    if (m.result === '勝利') t.win++;
+    else if (m.result === '引き分け') t.draw++;
+    else t.lose++;
+    t.gf += m.goalsFor || 0;
+    t.ga += m.goalsAgainst || 0;
+  });
+
+  const list = Object.values(tournamentMap).sort((a,b) => (b.win+b.draw+b.lose) - (a.win+a.draw+a.lose));
+
+  if (!list.length) {
+    document.getElementById('tournamentWrap').innerHTML = '<div class="empty-msg">データがありません</div>';
+    return;
+  }
+
+  const rows = list.map(t => {
+    const total = t.win + t.draw + t.lose;
+    const rate  = total ? Math.round(t.win / total * 100) : 0;
+    return `
+      <tr>
+        <td><div style="font-weight:700;">${t.tournament}</div><div style="font-size:11px;color:var(--gray);">${t.category}</div></td>
+        <td>${total}試合</td>
+        <td><span style="color:var(--win);font-weight:700;">${t.win}</span>勝 ${t.draw}分 <span style="color:var(--lose)">${t.lose}</span>敗</td>
+        <td>${rate}%</td>
+        <td>${t.gf}得点 / ${t.ga}失点</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('tournamentWrap').innerHTML = `
+    <table class="tournament-table">
+      <thead><tr><th>大会名</th><th>試合数</th><th>成績</th><th>勝率</th><th>得点/失点</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+</script>
+</body>
+</html>
