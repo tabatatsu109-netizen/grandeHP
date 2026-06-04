@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buildup Editor</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0e1a;font-family:'JetBrains Mono','Courier New',monospace;color:#e8eaf6;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px 0 40px}
+h1{font-size:13px;color:#4FC3F7;letter-spacing:.18em;margin-bottom:14px}
+
+.main{display:flex;gap:14px;width:100%;max-width:900px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+
+/* LEFT: pitch */
+.pitch-col{display:flex;flex-direction:column;align-items:center;gap:10px}
+#pitch-wrap{position:relative;user-select:none}
+#pitch-canvas{border-radius:8px;display:block;cursor:grab}
+#pitch-canvas.dragging{cursor:grabbing}
+
+/* RIGHT: panel */
+.panel{width:240px;display:flex;flex-direction:column;gap:10px}
+
+.card{background:#0d1b2a;border:0.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px}
+.card-title{font-size:10px;color:#78909C;letter-spacing:.18em;margin-bottom:10px;text-transform:uppercase}
+
+/* Phase selector */
+.phase-tabs{display:flex;gap:6px;margin-bottom:10px}
+.ptab{flex:1;padding:7px 4px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;font-family:inherit;font-size:10px;color:#78909C;text-align:center;transition:all .15s}
+.ptab.active{background:#1565C0;border-color:#4FC3F7;color:#E3F2FD;font-weight:700}
+.ptab.saved{border-color:rgba(102,187,106,0.5);color:#81C784}
+.ptab.active.saved{background:#1565C0;border-color:#FFD700;color:#FFD700}
+
+.phase-name-input{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 10px;color:#E3F2FD;font-family:inherit;font-size:11px;margin-bottom:8px;outline:none}
+.phase-name-input:focus{border-color:#4FC3F7}
+.phase-desc-input{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 10px;color:#E3F2FD;font-family:inherit;font-size:10px;margin-bottom:10px;outline:none;resize:none;height:56px;line-height:1.5}
+.phase-desc-input:focus{border-color:#4FC3F7}
+
+.btn{width:100%;padding:9px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.08em;border:none;transition:all .18s;margin-bottom:6px}
+.btn-save{background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#E8F5E9;border:1px solid rgba(102,187,106,0.4)}
+.btn-save:hover{filter:brightness(1.15)}
+.btn-play{background:linear-gradient(135deg,#1565C0,#0D47A1);color:#E3F2FD;border:1px solid rgba(79,195,247,0.4)}
+.btn-play:hover{filter:brightness(1.15)}
+.btn-play.playing{background:linear-gradient(135deg,#B71C1C,#C62828);border-color:rgba(255,82,82,0.4)}
+.btn-reset{background:rgba(255,255,255,0.05);color:#90A4AE;border:0.5px solid rgba(255,255,255,0.12)}
+.btn-reset:hover{background:rgba(255,255,255,0.1)}
+.btn-sm{padding:7px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.06em;border:none;transition:all .15s;flex:1}
+.btn-export{background:rgba(79,195,247,0.12);color:#4FC3F7;border:0.5px solid rgba(79,195,247,0.3)}
+.btn-import{background:rgba(255,215,0,0.1);color:#FFD700;border:0.5px solid rgba(255,215,0,0.3)}
+.btn-row{display:flex;gap:6px}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:7px}
+.leg{display:flex;align-items:center;gap:5px;font-size:9px;color:#78909C}
+.leg-dot{width:11px;height:11px;border-radius:50%}
+
+/* info */
+.info-box{background:rgba(255,215,0,0.07);border:0.5px solid rgba(255,215,0,0.2);border-radius:6px;padding:8px 10px;font-size:9px;color:#B8A000;line-height:1.6}
+
+/* arrow type selector */
+.arrow-types{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.atype{padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:9px;font-weight:700;border:0.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#90A4AE;transition:all .15s}
+.atype.active{border-width:1.5px}
+.atype-pass.active{background:rgba(255,215,0,0.15);border-color:#FFD700;color:#FFD700}
+.atype-move.active{background:rgba(0,229,255,0.12);border-color:#00E5FF;color:#00E5FF}
+.atype-press.active{background:rgba(255,85,85,0.12);border-color:#FF5555;color:#FF5555}
+
+.mode-tabs{display:flex;gap:5px;margin-bottom:8px}
+.mode-tab{flex:1;padding:6px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;font-family:inherit;font-size:10px;color:#78909C;text-align:center;transition:all .15s}
+.mode-tab.active{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.3);color:#E3F2FD;font-weight:700}
+
+.phase-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+.phase-list-item{padding:7px 10px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);font-size:10px;color:#90A4AE;display:flex;align-items:center;gap:6px}
+.phase-list-item.saved{color:#81C784;border-color:rgba(102,187,106,0.3)}
+.phase-dot{width:7px;height:7px;border-radius:50%;background:#546E7A;flex-shrink:0}
+.phase-dot.saved{background:#66BB6A}
+
+#import-file{display:none}
+</style>
+</head>
+<body>
+<h1>⚽ BUILDUP EDITOR</h1>
+
+<div class="main">
+  <!-- PITCH -->
+  <div class="pitch-col">
+    <div id="pitch-wrap">
+      <canvas id="pitch-canvas" width="340" height="520"></canvas>
+    </div>
+    <!-- bottom legend -->
+    <div class="card" style="width:340px;padding:10px 12px">
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:#1976D2;border:1.5px solid #4FC3F7"></div>自チーム</div>
+        <div class="leg"><div class="leg-dot" style="background:#E53935"></div>相手</div>
+        <div class="leg"><div class="leg-dot" style="background:white;border:1px solid #333"></div>ボール</div>
+        <div class="leg"><svg width="22" height="10"><line x1="0" y1="5" x2="15" y2="5" stroke="#FFD700" stroke-width="2"/><polygon points="17,5 11,2 11,8" fill="#FFD700"/></svg>パス</div>
+        <div class="leg"><svg width="22" height="10"><line x1="0" y1="5" x2="15" y2="5" stroke="#00E5FF" stroke-width="2"/><polygon points="17,5 11,2 11,8" fill="#00E5FF"/></svg>移動</div>
+        <div class="leg"><svg width="22" height="10"><line x1="0" y1="5" x2="19" y2="5" stroke="#FF5555" stroke-width="2" stroke-dasharray="4,3"/></svg>プレス</div>
+        <div class="leg"><svg width="22" height="10"><line x1="0" y1="5" x2="19" y2="5" stroke="#aaa" stroke-width="1.5" stroke-dasharray="3,3"/></svg>差分(自動)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="panel">
+
+    <!-- Mode -->
+    <div class="card">
+      <div class="card-title">操作モード</div>
+      <div class="mode-tabs">
+        <div class="mode-tab active" id="mode-move" onclick="setMode('move')">✥ 選手移動</div>
+        <div class="mode-tab" id="mode-ball" onclick="setMode('ball')">◎ ボール</div>
+        <div class="mode-tab" id="mode-arrow" onclick="setMode('arrow')">→ 矢印</div>
+      </div>
+      <div id="arrow-panel" style="display:none">
+        <div style="font-size:9px;color:#78909C;margin-bottom:5px">矢印の種類</div>
+        <div class="arrow-types">
+          <div class="atype atype-pass active" onclick="setArrowType('pass')">パス</div>
+          <div class="atype atype-move" onclick="setArrowType('move')">移動</div>
+          <div class="atype atype-press" onclick="setArrowType('press')">プレス</div>
+        </div>
+        <div style="font-size:9px;color:#78909C">クリック始点→終点で矢印を引く</div>
+      </div>
+      <div id="move-hint" style="font-size:9px;color:#78909C">選手・ボールをドラッグして配置</div>
+    </div>
+
+    <!-- Phase editor -->
+    <div class="card">
+      <div class="card-title">フェーズ編集</div>
+      <div class="phase-tabs">
+        <div class="ptab active" id="ptab-0" onclick="switchPhase(0)">P1</div>
+        <div class="ptab" id="ptab-1" onclick="switchPhase(1)">P2</div>
+        <div class="ptab" id="ptab-2" onclick="switchPhase(2)">P3</div>
+        <div class="ptab" id="ptab-3" onclick="switchPhase(3)">P4</div>
+      </div>
+      <input class="phase-name-input" id="phase-name" placeholder="フェーズ名（例：プレス発生）" />
+      <textarea class="phase-desc-input" id="phase-desc" placeholder="説明（例：相手2トップがCBへプレス）"></textarea>
+      <button class="btn btn-save" onclick="savePhase()">💾 このフェーズを保存</button>
+      <button class="btn btn-reset" onclick="resetPhase()">↩ このフェーズをリセット</button>
+    </div>
+
+    <!-- Playback -->
+    <div class="card">
+      <div class="card-title">再生</div>
+      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ アニメーション再生</button>
+      <div style="font-size:9px;color:#546E7A;margin-top:2px">保存済みフェーズを順番に再生</div>
+    </div>
+
+    <!-- Save/Load -->
+    <div class="card">
+      <div class="card-title">保存 / 読み込み</div>
+      <div class="btn-row" style="margin-bottom:6px">
+        <button class="btn-sm btn-export" onclick="exportJSON()">📤 エクスポート</button>
+        <button class="btn-sm btn-import" onclick="document.getElementById('import-file').click()">📥 インポート</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" onchange="importJSON(this)">
+      <div style="font-size:9px;color:#546E7A;line-height:1.6">JSONファイルで保存・共有できます</div>
+    </div>
+
+    <!-- Phase status -->
+    <div class="card">
+      <div class="card-title">フェーズ一覧</div>
+      <div class="phase-list" id="phase-list"></div>
+    </div>
+
+    <div class="info-box">
+      💡 矢印は前フェーズとの<b>差分を自動表示</b>。手動矢印で上書きも可。
+    </div>
+  </div>
+</div>
+
+<script>
+const W=340,H=520;
+const canvas=document.getElementById('pitch-canvas');
+const ctx=canvas.getContext('2d');
+
+// ── Initial positions ──
+const INIT_MY=[
+  {id:'gk',role:'GK',x:8,y:50},{id:'lb',role:'LB',x:22,y:18},{id:'cb1',role:'CB',x:22,y:35},
+  {id:'cb2',role:'CB',x:22,y:65},{id:'rb',role:'RB',x:22,y:82},{id:'cm1',role:'CM',x:40,y:30},
+  {id:'cm2',role:'DM',x:35,y:50},{id:'cm3',role:'CM',x:40,y:70},{id:'lw',role:'LW',x:58,y:15},
+  {id:'st',role:'ST',x:62,y:50},{id:'rw',role:'RW',x:58,y:85}
+];
+const INIT_OPP=[
+  {id:'ogk',role:'GK',x:92,y:50},{id:'olb',role:'LB',x:78,y:18},{id:'ocb1',role:'CB',x:78,y:35},
+  {id:'ocb2',role:'CB',x:78,y:65},{id:'orb',role:'RB',x:78,y:82},{id:'olm',role:'LM',x:62,y:18},
+  {id:'ocm1',role:'CM',x:62,y:35},{id:'ocm2',role:'CM',x:62,y:65},{id:'orm',role:'RM',x:62,y:82},
+  {id:'ost1',role:'ST',x:50,y:35},{id:'ost2',role:'ST',x:50,y:65}
+];
+
+function clonePlayers(arr){return arr.map(p=>({...p}))}
+function posToSVG(x,y){return{sx:(x/100)*W,sy:(y/100)*H}}
+function svgToPos(sx,sy){return{x:(sx/W)*100,y:(sy/H)*100}}
+
+// ── State ──
+let currentPhase=0;
+let mode='move'; // move | ball | arrow
+let arrowType='pass';
+let arrowStart=null;
+
+// phases: array of {name, desc, players(my), opps, ball, arrows(manual)}
+let phases=Array.from({length:4},(_,i)=>({
+  name:'',desc:'',
+  players:clonePlayers(INIT_MY),
+  opps:clonePlayers(INIT_OPP),
+  ball:{x:8,y:50},
+  arrows:[],
+  saved:false
+}));
+
+// Working copy (current edit state)
+let working={
+  players:clonePlayers(INIT_MY),
+  opps:clonePlayers(INIT_OPP),
+  ball:{x:8,y:50},
+  arrows:[]
+};
+
+// Drag state
+let drag={active:false,target:null,type:null,startX:0,startY:0};
+
+// Playback
+let playTimer=null;
+let playing=false;
+let playPhase=0;
+let dispPlayers={},dispOpps={},dispBall={x:8,y:50};
+let animId=null;
+
+// ── Mode ──
+function setMode(m){
+  mode=m;
+  ['move','ball','arrow'].forEach(mm=>{
+    document.getElementById('mode-'+mm).classList.toggle('active',mm===m);
+  });
+  document.getElementById('arrow-panel').style.display=m==='arrow'?'block':'none';
+  document.getElementById('move-hint').style.display=m==='move'?'block':'none';
+  arrowStart=null;
+  draw();
+}
+function setArrowType(t){
+  arrowType=t;
+  document.querySelectorAll('.atype').forEach(el=>el.classList.remove('active'));
+  document.querySelector('.atype-'+t).classList.add('active');
+}
+
+// ── Phase switch ──
+function switchPhase(idx){
+  currentPhase=idx;
+  working={
+    players:clonePlayers(phases[idx].players),
+    opps:clonePlayers(phases[idx].opps),
+    ball:{...phases[idx].ball},
+    arrows:[...phases[idx].arrows.map(a=>({...a}))]
+  };
+  document.getElementById('phase-name').value=phases[idx].name;
+  document.getElementById('phase-desc').value=phases[idx].desc;
+  updatePhaseTabs();
+  arrowStart=null;
+  draw();
+}
+
+function updatePhaseTabs(){
+  for(let i=0;i<4;i++){
+    const t=document.getElementById('ptab-'+i);
+    t.className='ptab'+(i===currentPhase?' active':'')+(phases[i].saved?' saved':'');
+  }
+  updatePhaseList();
+}
+
+function updatePhaseList(){
+  const el=document.getElementById('phase-list');
+  el.innerHTML=phases.map((ph,i)=>`
+    <div class="phase-list-item${ph.saved?' saved':''}">
+      <div class="phase-dot${ph.saved?' saved':''}"></div>
+      <span>Phase ${i+1}: ${ph.saved?(ph.name||'（名前なし）'):'未保存'}</span>
+    </div>
+  `).join('');
+}
+
+function savePhase(){
+  phases[currentPhase]={
+    name:document.getElementById('phase-name').value,
+    desc:document.getElementById('phase-desc').value,
+    players:clonePlayers(working.players),
+    opps:clonePlayers(working.opps),
+    ball:{...working.ball},
+    arrows:[...working.arrows.map(a=>({...a}))],
+    saved:true
+  };
+  updatePhaseTabs();
+  // flash
+  const btn=document.querySelector('.btn-save');
+  btn.textContent='✅ 保存しました！';
+  setTimeout(()=>{btn.textContent='💾 このフェーズを保存'},1200);
+}
+
+function resetPhase(){
+  const base=currentPhase===0?{players:clonePlayers(INIT_MY),opps:clonePlayers(INIT_OPP),ball:{x:8,y:50}}
+    :{players:clonePlayers(phases[currentPhase-1].players||INIT_MY),opps:clonePlayers(phases[currentPhase-1].opps||INIT_OPP),ball:{...(phases[currentPhase-1].ball||{x:8,y:50})}};
+  working={...base,arrows:[]};
+  draw();
+}
+
+// ── Auto-diff arrows ──
+function getDiffArrows(phaseIdx){
+  if(phaseIdx===0)return[];
+  const prev=phases[phaseIdx-1];
+  const cur=phases[phaseIdx];
+  if(!prev.saved)return[];
+  const arrows=[];
+  const thresh=3; // % threshold to show arrow
+  [...cur.players,...cur.opps].forEach(p=>{
+    const prevList=[...prev.players,...prev.opps];
+    const pp=prevList.find(q=>q.id===p.id);
+    if(!pp)return;
+    const dx=p.x-pp.x,dy=p.y-pp.y;
+    if(Math.abs(dx)>thresh||Math.abs(dy)>thresh){
+      arrows.push({fx:pp.x,fy:pp.y,tx:p.x,ty:p.y,type:'diff'});
+    }
+  });
+  return arrows;
+}
+
+// ── Draw ──
+function draw(useDisp){
+  const players=useDisp?Object.values(dispPlayers):working.players;
+  const opps=useDisp?Object.values(dispOpps):working.opps;
+  const ball=useDisp?dispBall:working.ball;
+  const phase=phases[currentPhase];
+
+  ctx.clearRect(0,0,W,H);
+
+  // pitch bg
+  ctx.fillStyle='#1a6b2e';ctx.fillRect(0,0,W,H);
+  for(let i=0;i<7;i++){
+    ctx.fillStyle=i%2===0?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.02)';
+    ctx.fillRect(0,i*(H/7),W,H/7);
+  }
+
+  // lines
+  ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=1;ctx.setLineDash([]);
+  ctx.strokeRect(8,8,W-16,H-16);
+  ctx.beginPath();ctx.moveTo(8,H/2);ctx.lineTo(W-8,H/2);ctx.stroke();
+  ctx.beginPath();ctx.arc(W/2,H/2,38,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.55)';ctx.beginPath();ctx.arc(W/2,H/2,2,0,Math.PI*2);ctx.fill();
+  const pa=(W-138)/2,pb=(W-80)/2;
+  ctx.strokeRect(pa,8,138,70);ctx.strokeRect(pb,8,80,35);
+  ctx.strokeRect(pa,H-78,138,70);ctx.strokeRect(pb,H-43,80,35);
+  const ga=(W-52)/2;
+  ctx.strokeRect(ga,4,52,8);ctx.strokeRect(ga,H-12,52,8);
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.beginPath();ctx.arc(W/2,38,2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(W/2,H-38,2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.28)';ctx.font='9px monospace';ctx.textAlign='center';
+  ctx.fillText('相手ゴール',W/2,20);ctx.fillText('自陣ゴール',W/2,H-10);
+
+  // diff arrows (auto)
+  if(!useDisp){
+    const diffArrows=getDiffArrows(currentPhase);
+    diffArrows.forEach(a=>drawArrow(a.fx,a.fy,a.tx,a.ty,'diff'));
+  }
+
+  // manual arrows
+  const manualArrows=useDisp?phases[currentPhase].arrows:working.arrows;
+  manualArrows.forEach(a=>drawArrow(a.fx,a.fy,a.tx,a.ty,a.type));
+
+  // arrow preview
+  if(mode==='arrow'&&arrowStart){
+    ctx.save();ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(arrowStart.sx,arrowStart.sy);ctx.lineTo(arrowStart.sx,arrowStart.sy);ctx.stroke();
+    ctx.restore();
+  }
+
+  // players
+  opps.forEach(p=>drawPlayer(p,true));
+  players.forEach(p=>drawPlayer(p,false));
+
+  // ball
+  const bx=(ball.x/100)*W,by=(ball.y/100)*H;
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=4;
+  ctx.beginPath();ctx.arc(bx,by,7,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();
+  ctx.strokeStyle='#333';ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.stroke();
+  ctx.shadowBlur=0;ctx.strokeStyle='#666';ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.moveTo(bx-3,by-3);ctx.lineTo(bx+3,by+3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(bx+3,by-3);ctx.lineTo(bx-3,by+3);ctx.stroke();
+  ctx.restore();
+
+  // arrow start indicator
+  if(mode==='arrow'&&arrowStart){
+    ctx.save();ctx.strokeStyle='#FFD700';ctx.lineWidth=2;ctx.setLineDash([3,2]);
+    ctx.beginPath();ctx.arc(arrowStart.sx,arrowStart.sy,16,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawArrow(fx,fy,tx,ty,type){
+  const x1=(fx/100)*W,y1=(fy/100)*H,x2=(tx/100)*W,y2=(ty/100)*H;
+  const cols={pass:'#FFD700',move:'#00E5FF',press:'#FF5555',diff:'rgba(180,180,180,0.5)'};
+  const col=cols[type]||'#FFD700';
+  const dashed=type==='press'||type==='diff';
+  ctx.save();ctx.globalAlpha=type==='diff'?0.65:0.9;ctx.strokeStyle=col;ctx.lineWidth=type==='diff'?1.2:2;
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  if(type!=='press'){
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+    if(len>5){
+      const ux=dx/len,uy=dy/len,px=-uy*(type==='diff'?3:4),py=ux*(type==='diff'?3:4);
+      const ax=x2-ux*8,ay=y2-uy*8;
+      ctx.setLineDash([]);ctx.fillStyle=col;
+      ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(ax+px,ay+py);ctx.lineTo(ax-px,ay-py);ctx.closePath();ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPlayer(p,isOpp){
+  const sx=(p.x/100)*W,sy=(p.y/100)*H;
+  const r=isOpp?11:12;
+  ctx.save();
+  ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);
+  ctx.fillStyle=isOpp?'#E53935':'#1976D2';ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.stroke();
+  ctx.fillStyle='white';ctx.font='bold 7.5px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(p.role,sx,sy+0.5);
+  ctx.restore();
+}
+
+// ── Hit test ──
+function hitTest(sx,sy){
+  const allPlayers=[...working.players,...working.opps];
+  const THRESH=16;
+  for(let i=allPlayers.length-1;i>=0;i--){
+    const p=allPlayers[i];
+    const px=(p.x/100)*W,py=(p.y/100)*H;
+    if(Math.hypot(sx-px,sy-py)<THRESH) return{type:'player',player:p};
+  }
+  // ball
+  const bx=(working.ball.x/100)*W,by=(working.ball.y/100)*H;
+  if(Math.hypot(sx-bx,sy-by)<12) return{type:'ball'};
+  return null;
+}
+
+// ── Mouse / Touch events ──
+function getPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width,scaleY=H/rect.height;
+  const src=e.touches?e.touches[0]:e;
+  return{sx:(src.clientX-rect.left)*scaleX,sy:(src.clientY-rect.top)*scaleY};
+}
+
+canvas.addEventListener('mousedown',onDown);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();onDown(e)},{passive:false});
+canvas.addEventListener('mousemove',onMove);
+canvas.addEventListener('touchmove',e=>{e.preventDefault();onMove(e)},{passive:false});
+canvas.addEventListener('mouseup',onUp);
+canvas.addEventListener('touchend',e=>{e.preventDefault();onUp(e)},{passive:false});
+
+function onDown(e){
+  if(playing)return;
+  const {sx,sy}=getPos(e);
+
+  if(mode==='arrow'){
+    // find clicked player or ball for start
+    const hit=hitTest(sx,sy);
+    if(hit){
+      const cx=hit.type==='ball'?(working.ball.x/100)*W:(hit.player.x/100)*W;
+      const cy=hit.type==='ball'?(working.ball.y/100)*H:(hit.player.y/100)*H;
+      arrowStart={sx:cx,sy:cy,px:hit.type==='ball'?working.ball.x:hit.player.x,py:hit.type==='ball'?working.ball.y:hit.player.y};
+    }else if(!arrowStart){
+      const pos=svgToPos(sx,sy);
+      arrowStart={sx,sy,px:pos.x,py:pos.y};
+    }else{
+      // second click = end
+      const pos=svgToPos(sx,sy);
+      if(Math.hypot(sx-arrowStart.sx,sy-arrowStart.sy)>8){
+        working.arrows.push({fx:arrowStart.px,fy:arrowStart.py,tx:pos.x,ty:pos.y,type:arrowType});
+      }
+      arrowStart=null;
+      draw();
+    }
+    return;
+  }
+
+  if(mode==='ball'){
+    drag={active:true,target:null,type:'ball'};return;
+  }
+
+  const hit=hitTest(sx,sy);
+  if(hit){
+    drag={active:true,target:hit.type==='ball'?null:hit.player,type:hit.type};
+    canvas.classList.add('dragging');
+  }
+}
+
+function onMove(e){
+  if(!drag.active||playing)return;
+  const {sx,sy}=getPos(e);
+  const pos=svgToPos(Math.max(4,Math.min(W-4,sx)),Math.max(4,Math.min(H-4,sy)));
+  if(drag.type==='ball'||mode==='ball'){
+    working.ball={x:pos.x,y:pos.y};
+  }else if(drag.target){
+    drag.target.x=pos.x;drag.target.y=pos.y;
+  }
+  draw();
+}
+
+function onUp(e){
+  drag.active=false;canvas.classList.remove('dragging');
+}
+
+// ── Remove last arrow (right click) ──
+canvas.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  if(working.arrows.length>0){working.arrows.pop();draw();}
+});
+
+// ── Playback ──
+function lerp(a,b,t){return a+(b-a)*t}
+function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t}
+
+function animateTo(targetP,targetO,targetB,onDone){
+  cancelAnimationFrame(animId);
+  const fromP={};
+  Object.keys(dispPlayers).forEach(id=>{fromP[id]={...dispPlayers[id]}});
+  const fromO={};
+  Object.keys(dispOpps).forEach(id=>{fromO[id]={...dispOpps[id]}});
+  const fromB={...dispBall};
+  const t0=performance.now(),dur=900;
+  function fr(now){
+    const t=Math.min((now-t0)/dur,1),e=ease(t);
+    const dp={},dO={};
+    targetP.forEach(p=>{const f=fromP[p.id]||p;dp[p.id]={...p,x:lerp(f.x,p.x,e),y:lerp(f.y,p.y,e)}});
+    targetO.forEach(p=>{const f=fromO[p.id]||p;dO[p.id]={...p,x:lerp(f.x,p.x,e),y:lerp(f.y,p.y,e)}});
+    dispPlayers=dp;dispOpps=dO;
+    dispBall={x:lerp(fromB.x,targetB.x,e),y:lerp(fromB.y,targetB.y,e)};
+    draw(true);
+    if(t<1){animId=requestAnimationFrame(fr);}
+    else if(onDone)onDone();
+  }
+  animId=requestAnimationFrame(fr);
+}
+
+function togglePlay(){
+  const savedPhases=phases.filter(p=>p.saved);
+  if(savedPhases.length<1){alert('まず1つ以上フェーズを保存してください');return}
+  if(playing){stopPlay();return}
+  playing=true;
+  const btn=document.getElementById('btn-play');
+  btn.className='btn btn-play playing';btn.textContent='⏹ 停止';
+  playPhase=0;
+  const ph=savedPhases[0];
+  dispPlayers={};ph.players.forEach(p=>{dispPlayers[p.id]={...p}});
+  dispOpps={};ph.opps.forEach(p=>{dispOpps[p.id]={...p}});
+  dispBall={...ph.ball};
+  currentPhase=phases.indexOf(ph);
+  updatePhaseTabs();
+  draw(true);
+  function nextPhase(){
+    if(!playing)return;
+    playPhase++;
+    if(playPhase>=savedPhases.length){stopPlay();return}
+    const nextPh=savedPhases[playPhase];
+    currentPhase=phases.indexOf(nextPh);
+    updatePhaseTabs();
+    animateTo(nextPh.players,nextPh.opps,nextPh.ball,()=>{
+      if(playing)playTimer=setTimeout(nextPhase,1800);
+    });
+  }
+  playTimer=setTimeout(nextPhase,2000);
+}
+
+function stopPlay(){
+  playing=false;clearTimeout(playTimer);cancelAnimationFrame(animId);
+  const btn=document.getElementById('btn-play');
+  btn.className='btn btn-play';btn.textContent='▶ アニメーション再生';
+  // restore working state
+  switchPhase(currentPhase);
+}
+
+// ── Export / Import ──
+function exportJSON(){
+  const savedPhases=phases.filter(p=>p.saved);
+  if(savedPhases.length===0){alert('保存済みフェーズがありません');return}
+  const data={
+    version:1,
+    title:'Buildup Pattern',
+    exportedAt:new Date().toISOString(),
+    phases:phases.map(p=>({
+      name:p.name,desc:p.desc,saved:p.saved,
+      players:p.players,opps:p.opps,ball:p.ball,arrows:p.arrows
+    }))
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`buildup_${Date.now()}.json`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.phases||!Array.isArray(data.phases))throw new Error('invalid');
+      phases=data.phases.map(p=>({
+        name:p.name||'',desc:p.desc||'',saved:!!p.saved,
+        players:p.players||clonePlayers(INIT_MY),
+        opps:p.opps||clonePlayers(INIT_OPP),
+        ball:p.ball||{x:8,y:50},
+        arrows:p.arrows||[]
+      }));
+      while(phases.length<4)phases.push({name:'',desc:'',players:clonePlayers(INIT_MY),opps:clonePlayers(INIT_OPP),ball:{x:8,y:50},arrows:[],saved:false});
+      switchPhase(0);
+      alert('読み込みました！');
+    }catch(err){alert('ファイルが無効です')}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+// ── Init ──
+updatePhaseTabs();
+draw();
+</script>
+</body>
+</html>
