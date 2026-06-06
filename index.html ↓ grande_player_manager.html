@@ -3,629 +3,1616 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>選手管理│GRANDE FC</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<title>八ヶ岳グランデフットボールクラブ</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,800;0,900;1,800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --green:#1A6B3C; --green-dark:#0F4526; --green-deep:#071A0F;
-    --gold:#D4A820; --gold-light:#E8C040;
-    --white:#FFFFFF; --off-white:#F4F7FB;
-    --gray:#8A9BB0; --text:#0D1B2A; --border:#DDE4EF;
-    --red:#C0392B; --red-light:#FDECEA;
+    --blue: #1A6B3C;
+    --blue-dark: #0F4526;
+    --blue-deep: #071A0F;
+    --blue-light: #2A8C52;
+    --accent: #D4A820;
+    --white: #FFFFFF;
+    --off-white: #F4F7FB;
+    --gray: #8A9BB0;
+    --text: #0D1B2A;
+    --radius: 4px;
   }
-  body { font-family:'Noto Sans JP',sans-serif; background:var(--off-white); color:var(--text); min-height:100vh; }
 
-  /* HEADER */
-  header {
-    background:var(--green-deep); padding:0 2rem; height:60px;
-    display:flex; align-items:center; justify-content:space-between;
-    border-bottom:2px solid var(--gold); position:sticky; top:0; z-index:100;
-  }
-  .header-title {
-    display:flex; align-items:center; gap:12px;
-  }
-  .header-title .icon {
-    width:36px; height:36px; background:var(--gold);
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px;
-  }
-  .header-title h1 {
-    font-family:'Barlow Condensed',sans-serif; font-size:20px;
-    font-weight:900; color:var(--white); letter-spacing:1px;
-  }
-  .header-title h1 span { color:var(--gold); }
-  .header-right { display:flex; align-items:center; gap:10px; }
-  .sync-status { font-size:12px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:6px; }
-  .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--gray); }
-  .sync-dot.synced { background:#2ECC71; }
-  .sync-dot.syncing { background:var(--gold); animation:pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  html { scroll-behavior: smooth; }
 
-  /* LAYOUT */
-  .app { display:grid; grid-template-columns:320px 1fr; min-height:calc(100vh - 60px); }
-  @media(max-width:768px){ .app{grid-template-columns:1fr;} }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--off-white);
+    color: var(--text);
+    overflow-x: hidden;
+  }
 
-  /* SIDEBAR */
-  .sidebar {
-    background:var(--white); border-right:1px solid var(--border);
-    display:flex; flex-direction:column;
+  /* ===== NAV ===== */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--blue-deep);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 64px;
+    border-bottom: 2px solid var(--accent);
   }
-  .sidebar-head {
-    padding:16px; border-bottom:1px solid var(--border);
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .sidebar-head h2 { font-size:13px; font-weight:700; color:var(--text); letter-spacing:0.5px; }
-  .btn-add {
-    background:var(--green); color:var(--white);
-    border:none; padding:8px 14px; font-size:13px; font-weight:700;
-    font-family:'Noto Sans JP',sans-serif; cursor:pointer;
-    display:flex; align-items:center; gap:6px; transition:all 0.2s;
-  }
-  .btn-add:hover { background:var(--green-dark); }
 
-  /* TAB FILTER */
-  .tab-bar { display:flex; border-bottom:1px solid var(--border); }
-  .tab-btn {
-    flex:1; padding:10px 4px; border:none; background:none;
-    font-size:11px; font-weight:700; letter-spacing:1px; color:var(--gray);
-    cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s;
-    font-family:'Barlow Condensed',sans-serif;
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none;
   }
-  .tab-btn.active { color:var(--green); border-bottom-color:var(--gold); }
 
-  /* PLAYER LIST */
-  .player-list { flex:1; overflow-y:auto; }
-  .player-item {
-    padding:12px 16px; border-bottom:1px solid var(--border);
-    cursor:pointer; display:flex; align-items:center; gap:12px;
-    transition:background 0.15s;
+    .nav-logo .emblem-img {
+    width: 48px; height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 0;
+    background: none;
+    border: none;
   }
-  .player-item:hover { background:var(--off-white); }
-  .player-item.active { background:#EEF7F2; border-left:3px solid var(--green); }
-  .player-num {
-    background:var(--green); color:var(--white);
-    font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:900;
-    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-  }
-  .player-num.staff { background:var(--green-deep); }
-  .player-info { flex:1; min-width:0; }
-  .player-name { font-size:14px; font-weight:700; color:var(--text); }
-  .player-meta { font-size:11px; color:var(--gray); margin-top:1px; }
-  .player-pos {
-    font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
-    letter-spacing:1px; padding:2px 6px;
-  }
-  .pos-GK { background:#FEF3E2; color:#854F0B; }
-  .pos-DF { background:#E8F5EE; color:var(--green-dark); }
-  .pos-MF { background:#E8F5EE; color:var(--green-dark); }
-  .pos-FW { background:#FDECEA; color:var(--red); }
-  .pos-staff { background:#F0E8FF; color:#5A3E8A; }
 
-  .empty-list { padding:40px 16px; text-align:center; color:var(--gray); font-size:13px; }
-
-  /* MAIN */
-  .main { padding:0; display:flex; flex-direction:column; }
-
-  /* FORM PANEL */
-  .form-panel {
-    flex:1; padding:28px 32px; overflow-y:auto;
-    display:none;
+  .nav-logo .name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800; letter-spacing: 1px;
+    color: var(--white);
+    line-height: 1.1;
   }
-  .form-panel.show { display:block; }
 
-  .form-panel-title {
-    font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900;
-    color:var(--text); margin-bottom:4px;
+  .nav-logo .name span {
+    display: block; font-size: 11px; font-weight: 400;
+    color: var(--accent); letter-spacing: 1px;
+    font-family: 'Noto Sans JP', sans-serif;
+    white-space: nowrap;
   }
-  .form-panel-sub { font-size:13px; color:var(--gray); margin-bottom:24px; }
+  @media (max-width: 480px) {
+    .nav-logo .name span { display: none; }
+    .nav-logo .name { font-size: 15px; }
+  }
 
-  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  @media(max-width:900px){ .form-grid{grid-template-columns:1fr;} }
+  .nav-links {
+    display: flex; gap: 0; list-style: none;
+  }
 
-  .form-group { margin-bottom:4px; }
-  .form-group.full { grid-column:1/-1; }
-  .form-label { display:block; font-size:12px; font-weight:700; color:var(--gray); margin-bottom:5px; letter-spacing:0.5px; }
-  .form-label .req { color:var(--gold); }
-  .form-input, .form-select {
-    width:100%; padding:10px 12px;
-    border:1px solid var(--border); background:var(--white);
-    color:var(--text); font-family:'Noto Sans JP',sans-serif; font-size:14px;
-    outline:none; transition:border-color 0.2s; border-radius:0; appearance:none;
+  .nav-links a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 16px; height: 64px;
+    display: flex; align-items: center;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    border-bottom: 3px solid transparent;
   }
-  .form-input:focus, .form-select:focus { border-color:var(--green); }
 
-  /* PHOTO UPLOAD */
-  .photo-upload {
-    border:2px dashed var(--border); padding:20px;
-    text-align:center; cursor:pointer; transition:all 0.2s;
-    position:relative;
+  .nav-links a:hover {
+    color: var(--white);
+    border-bottom-color: var(--accent);
+    background: rgba(212,168,32,0.08);
   }
-  .photo-upload:hover { border-color:var(--green); background:#F0F7F3; }
-  .photo-upload input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-  .photo-preview { width:100%; max-height:200px; object-fit:cover; object-position:center top; display:none; }
-  .photo-placeholder { color:var(--gray); font-size:13px; }
-  .photo-placeholder .icon { font-size:32px; margin-bottom:6px; }
 
-  /* FORM ACTIONS */
-  .form-actions { display:flex; gap:10px; margin-top:24px; flex-wrap:wrap; }
-  .btn-save {
-    background:var(--green); color:var(--white); border:none;
-    padding:12px 28px; font-size:14px; font-weight:900;
-    font-family:'Noto Sans JP',sans-serif; cursor:pointer; transition:all 0.2s;
-    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+  /* ===== HERO ===== */
+  .hero {
+    margin-top: 64px;
+    height: calc(100vh - 64px);
+    min-height: 600px;
+    background: var(--blue-deep);
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center;
   }
-  .btn-save:hover { background:var(--green-dark); }
-  .btn-save:disabled { background:var(--gray); cursor:not-allowed; }
-  .btn-cancel {
-    background:none; color:var(--gray); border:1px solid var(--border);
-    padding:12px 20px; font-size:14px; font-weight:500;
-    font-family:'Noto Sans JP',sans-serif; cursor:pointer; transition:all 0.2s;
-  }
-  .btn-cancel:hover { border-color:var(--gray); color:var(--text); }
-  .btn-delete {
-    background:none; color:var(--red); border:1px solid var(--red);
-    padding:12px 20px; font-size:14px; font-weight:700;
-    font-family:'Noto Sans JP',sans-serif; cursor:pointer; transition:all 0.2s;
-    margin-left:auto;
-  }
-  .btn-delete:hover { background:var(--red-light); }
 
-  /* EMPTY STATE */
-  .empty-state {
-    flex:1; display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    padding:40px; text-align:center; color:var(--gray);
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(135deg, rgba(7,26,15,0.98) 0%, rgba(10,42,24,0.92) 100%);
   }
-  .empty-state .big-icon { font-size:64px; margin-bottom:16px; opacity:0.4; }
-  .empty-state h3 { font-size:18px; font-weight:700; color:var(--text); margin-bottom:6px; }
-  .empty-state p { font-size:13px; line-height:1.8; }
 
-  /* TOAST */
-  .toast {
-    position:fixed; bottom:24px; right:24px; z-index:999;
-    background:var(--green-deep); color:var(--white);
-    padding:12px 20px; font-size:13px; font-weight:700;
-    border-left:3px solid var(--gold);
-    transform:translateY(80px); opacity:0;
-    transition:all 0.3s ease;
-    pointer-events:none;
+  /* Geometric diagonal accent */
+  .hero-diagonal {
+    position: absolute;
+    right: -5%;
+    top: 0; bottom: 0;
+    width: 55%;
+    background: linear-gradient(160deg, var(--blue-dark) 0%, var(--blue) 100%);
+    clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%);
+    opacity: 0.5;
   }
-  .toast.show { transform:translateY(0); opacity:1; }
-  .toast.error { border-left-color:var(--red); }
 
-  /* LOADING OVERLAY */
-  .loading-overlay {
-    position:fixed; inset:0; background:rgba(7,26,15,0.7);
-    display:none; align-items:center; justify-content:center; z-index:200;
-    flex-direction:column; gap:12px;
+  .hero-diagonal2 {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 45%;
+    background: linear-gradient(180deg, var(--blue-dark) 0%, var(--blue-deep) 100%);
+    clip-path: polygon(30% 0%, 100% 0%, 100% 100%, 5% 100%);
+    opacity: 0.3;
   }
-  .loading-overlay.show { display:flex; }
-  .spinner { width:36px; height:36px; border:3px solid rgba(255,255,255,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .loading-text { color:var(--white); font-size:13px; }
+
+  /* Field lines decoration */
+  /* Canvas field animation */
+  #fieldCanvas {
+    position: absolute;
+    right: 3%; top: 50%;
+    transform: translateY(-50%);
+    width: 480px; height: 320px;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+  @media (max-width: 900px) { #fieldCanvas { display: none; } }
+
+  .hero-content {
+    position: relative; z-index: 2;
+    padding: 0 4rem;
+    max-width: 720px;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--blue-deep);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 3px;
+    padding: 5px 14px;
+    margin-bottom: 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .hero-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(48px, 6vw, 80px);
+    font-weight: 900;
+    line-height: 0.95;
+    color: var(--white);
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+
+  .hero-title .accent-word {
+    color: var(--accent);
+    font-style: italic;
+    display: block;
+  }
+
+  .hero-subtitle {
+    font-size: 15px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.8;
+    max-width: 480px;
+    margin-bottom: 36px;
+  }
+
+  .hero-ctas {
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--blue-deep);
+    border: none;
+    padding: 14px 32px;
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 1px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  }
+
+  .btn-primary:hover {
+    background: #E8C040;
+    transform: translateY(-1px);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--white);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    padding: 14px 32px;
+    font-size: 14px; font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Scroll indicator */
+  .hero-scroll {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px; letter-spacing: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, rgba(212,168,32,0.6), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ===== NEWS TICKER ===== */
+  .ticker {
+    background: var(--blue);
+    overflow: hidden; height: 44px;
+    display: flex; align-items: center;
+  }
+
+  .ticker-label {
+    background: var(--accent);
+    color: var(--blue-deep);
+    font-size: 12px; font-weight: 700;
+    padding: 0 16px; height: 100%;
+    display: flex; align-items: center;
+    letter-spacing: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .ticker-track {
+    flex: 1; overflow: hidden; position: relative;
+  }
+
+  .ticker-inner {
+    display: flex; gap: 64px;
+    animation: ticker 30s linear infinite;
+    white-space: nowrap;
+  }
+
+  .ticker-inner span {
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .ticker-inner span::before {
+    content: '▶';
+    color: var(--accent);
+    font-size: 8px;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ===== SECTION BASE ===== */
+  section { padding: 80px 4rem; }
+
+  .section-header {
+    margin-bottom: 48px;
+  }
+
+  .section-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--blue);
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .section-title em {
+    color: var(--blue); font-style: normal;
+  }
+
+  .section-line {
+    width: 48px; height: 3px;
+    background: var(--accent);
+    margin-top: 12px;
+  }
+
+  /* ===== NEWS ===== */
+  .news-section {
+    background: var(--white);
+  }
+
+  .news-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .news-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: 1px;
+    background: #DDE4EF;
+    border: 1px solid #DDE4EF;
+  }
+
+  .news-card {
+    background: var(--white);
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .news-card:hover {
+    background: #F0F7F3;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(26,107,60,0.15);
+    position: relative; z-index: 1;
+  }
+
+  .news-card.featured { grid-row: span 2; }
+
+  .news-cat {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--blue);
+    font-family: 'Barlow Condensed', sans-serif;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .news-cat::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .news-card.featured .news-title { font-size: 22px; line-height: 1.4; }
+
+  .news-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .news-date {
+    font-size: 12px;
+    color: var(--gray);
+  }
+
+  .news-img {
+    width: 100%; aspect-ratio: 16/9;
+    background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%);
+    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 48px; font-weight: 900;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: -2px;
+    overflow: hidden;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+  }
+
+  /* ===== ABOUT ===== */
+  .about-section {
+    background: var(--blue-deep);
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .about-section .section-eyebrow { color: var(--accent); }
+  .about-section .section-title { color: var(--white); }
+
+  .about-accent {
+    position: absolute;
+    right: -100px; top: -100px;
+    width: 500px; height: 500px;
+    border: 1px solid rgba(212,168,32,0.08);
+    border-radius: 50%;
+  }
+
+  .about-accent2 {
+    position: absolute;
+    right: -50px; top: -50px;
+    width: 300px; height: 300px;
+    border: 1px solid rgba(212,168,32,0.12);
+    border-radius: 50%;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+
+  .about-text p {
+    font-size: 15px;
+    line-height: 2;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 20px;
+  }
+
+  .about-text strong { color: var(--accent); font-weight: 700; }
+
+  .about-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: rgba(212,168,32,0.1);
+  }
+
+  .stat-box {
+    background: rgba(7,26,15,0.85);
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 52px; font-weight: 900;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .stat-num span {
+    color: var(--accent);
+    font-size: 28px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== CATEGORIES ===== */
+  .cats-section { background: var(--off-white); }
+
+  .cats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .cat-card {
+    background: var(--white);
+    border: 1px solid #DDE4EF;
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.25s;
+    text-decoration: none; color: inherit;
+    display: block;
+  }
+
+  .cat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(26,107,60,0.18);
+    border-color: var(--blue);
+  }
+
+  .cat-header {
+    background: var(--blue-dark);
+    padding: 28px 24px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cat-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+
+  .cat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 72px; font-weight: 900;
+    color: rgba(255,255,255,0.08);
+    position: absolute; right: 12px; top: -8px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .cat-icon {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .cat-icon svg { width: 24px; height: 24px; fill: var(--blue-deep); }
+
+  .cat-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 24px; font-weight: 800;
+    color: var(--white);
+    letter-spacing: 0.5px;
+  }
+
+  .cat-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+
+  .cat-body {
+    padding: 20px 24px;
+  }
+
+  .cat-desc {
+    font-size: 13px;
+    color: #5A6A80;
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+
+  .cat-link {
+    font-size: 13px; font-weight: 700;
+    color: var(--blue);
+    display: flex; align-items: center; gap: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .cat-link svg { width: 16px; height: 16px; stroke: currentColor; }
+
+  /* ===== RECRUITMENT ===== */
+  .recruit-section {
+    background: var(--blue);
+    position: relative; overflow: hidden;
+  }
+
+  .recruit-section .section-eyebrow { color: rgba(255,255,255,0.6); }
+  .recruit-section .section-title { color: var(--white); }
+  .recruit-section .section-line { background: var(--white); opacity: 0.4; }
+
+  .recruit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .recruit-card {
+    background: var(--blue-dark);
+    padding: 32px;
+    position: relative;
+  }
+
+  .recruit-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+  }
+
+  .recruit-card:hover::before { transform: scaleX(1); }
+
+  .recruit-tag {
+    background: rgba(212,168,32,0.15);
+    color: var(--accent);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    display: inline-block;
+    margin-bottom: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .recruit-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px; font-weight: 900;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .recruit-age {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 16px;
+  }
+
+  .recruit-info {
+    list-style: none;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    line-height: 2;
+  }
+
+  .recruit-info li {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .recruit-info li::before {
+    content: '';
+    width: 4px; height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ===== SCHEDULE ===== */
+  .schedule-section { background: var(--white); }
+
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .schedule-list { list-style: none; }
+
+  .schedule-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #EEF2F8;
+  }
+
+  .schedule-day {
+    background: var(--blue);
+    color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    width: 52px; height: 52px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .schedule-day.accent { background: var(--accent); color: var(--blue-deep); }
+
+  .schedule-content {}
+
+  .schedule-event {
+    font-size: 14px; font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+
+  .schedule-meta {
+    font-size: 12px;
+    color: var(--gray);
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: var(--blue-deep);
+    color: rgba(255,255,255,0.6);
+  }
+
+  .footer-top {
+    padding: 64px 4rem 48px;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 48px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .footer-brand .name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 24px; font-weight: 900;
+    color: var(--white); letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .footer-brand .sub {
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  .footer-brand p {
+    font-size: 13px;
+    line-height: 2;
+    max-width: 280px;
+  }
+
+  .footer-col h4 {
+    font-size: 13px; font-weight: 700;
+    color: var(--white);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212,168,32,0.3);
+  }
+
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 8px; }
+  .footer-col a {
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .footer-col a::before {
+    content: '›';
+    color: var(--accent);
+  }
+  .footer-col a:hover { color: var(--accent); }
+
+  .footer-bottom {
+    padding: 20px 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px;
+  }
+
+  .footer-bottom a { color: var(--accent); text-decoration: none; }
+
+  /* ===== MORE LINK ===== */
+  .more-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700;
+    color: var(--blue);
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    transition: gap 0.2s;
+  }
+  .more-link:hover { gap: 10px; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    section { padding: 60px 1.5rem; }
+    nav { padding: 0 1.5rem; }
+    .nav-links { display: none; }
+    .hero-content { padding: 0 1.5rem; }
+    .about-grid,
+    .schedule-grid,
+    .recruit-grid { grid-template-columns: 1fr; }
+    .news-grid { grid-template-columns: 1fr; }
+    .news-card.featured { grid-row: auto; }
+    .cats-grid { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr; gap: 32px; padding: 40px 1.5rem; }
+    .footer-bottom { flex-direction: column; gap: 8px; text-align: center; padding: 20px 1.5rem; }
+    /* 取り組みカード */
+    #initiatives-grid { grid-template-columns: 1fr !important; }
+  }
+
+  /* SNS ICONS */
+  .sns-bar {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .sns-link {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .sns-link:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+  .sns-link.line:hover { color: #06C755; }
+  .sns-link.youtube:hover { color: #FF0000; }
+  .sns-link.instagram:hover { color: #E1306C; }
+
+  /* footer SNS */
+  .footer-sns {
+    display: flex; gap: 8px; margin-top: 16px;
+  }
+  .footer-sns a {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .footer-sns a:hover { background: rgba(255,255,255,0.15); color: var(--white); }
+  .footer-sns a.line:hover { border-color: #06C755; color: #06C755; }
+  .footer-sns a.youtube:hover { border-color: #FF0000; color: #FF0000; }
+  .footer-sns a.instagram:hover { border-color: #E1306C; color: #E1306C; }
+
 </style>
 </head>
 <body>
 
-<header>
-  <div class="header-title">
-    <div class="icon">⚽</div>
-    <h1>選手管理 <span>GRANDE FC</span></h1>
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <img src="emblem.png" class="emblem-img" alt="GRANDE FC エンブレム">
+    <div class="name">
+      GRANDE FC
+      <span>八ヶ岳グランデフットボールクラブ</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">クラブについて</a></li>
+    <li><a href="#cats">カテゴリー</a></li>
+    <li><a href="#recruit">選手募集</a></li>
+    <li><a href="#schedule">スケジュール</a></li>
+    <li><a href="#news">ニュース</a></li>
+  </ul>
+  <div class="sns-bar">
+    <a href="https://line.me/R/ti/p/@200sfwtn" target="_blank" class="sns-link line" title="LINE"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg></a>
+    <a href="https://m.youtube.com/@corazon-grande9642?ra=m" target="_blank" class="sns-link youtube" title="YouTube"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+    <a href="https://www.instagram.com/yatsugatake.grande/" target="_blank" class="sns-link instagram" title="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></a>
   </div>
-  <div class="header-right">
-    <div class="sync-status">
-      <div class="sync-dot" id="syncDot"></div>
-      <span id="syncText">接続中...</span>
-    </div>
-  </div>
-</header>
+</nav>
 
-<div class="app">
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-head">
-      <h2>選手・スタッフ一覧</h2>
-      <button class="btn-add" onclick="newPlayer()">＋ 追加</button>
-    </div>
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="setTab('all',this)">すべて</button>
-      <button class="tab-btn" onclick="setTab('jy',this)">JY</button>
-      <button class="tab-btn" onclick="setTab('jr',this)">JR</button>
-      <button class="tab-btn" onclick="setTab('staff',this)">スタッフ</button>
-    </div>
-    <div class="player-list" id="playerList"></div>
-  </div>
 
-  <!-- MAIN -->
-  <div class="main" id="mainArea">
-    <div class="empty-state" id="emptyState">
-      <div class="big-icon">👤</div>
-      <h3>選手を選択または追加</h3>
-      <p>左のリストから選手を選ぶか、<br>「＋ 追加」ボタンで新規登録してください。</p>
-    </div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-diagonal"></div>
+  <div class="hero-diagonal2"></div>
+  <canvas id="fieldCanvas"></canvas>
 
-    <div class="form-panel" id="formPanel">
-      <div class="form-panel-title" id="formTitle">新規追加</div>
-      <div class="form-panel-sub" id="formSub">選手情報を入力してください</div>
-
-      <div class="form-grid">
-        <!-- 写真 -->
-        <div class="form-group full">
-          <label class="form-label">プロフィール写真URL</label>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input class="form-input" type="url" id="photoUrl" placeholder="Googleドライブのリンクをここにペースト" oninput="onUrlInput(this.value)" style="flex:1;">
-            <button type="button" onclick="clearPhoto()" style="padding:10px 12px; border:1px solid var(--border); background:none; color:var(--gray); cursor:pointer; font-size:12px; white-space:nowrap;">クリア</button>
-          </div>
-          <div id="photoPreviewWrap" style="display:none; margin-bottom:8px;">
-            <img id="photoPreview" src="" alt="" style="width:100%; max-height:200px; object-fit:cover; object-position:center top; display:block;">
-          </div>
-          <div style="background:#F0F7F3; border:1px solid #C8E6D4; padding:10px 12px; font-size:12px; color:#0F4526; line-height:1.9;">
-            <strong>📱 Googleドライブからの手順</strong><br>
-            ① ドライブアプリで写真を開く<br>
-            ② 右上「︙」→「リンクをコピー」<br>
-            ③ 上の欄に貼り付けるだけ！
-          </div>
-        </div>
-
-        <!-- 名前 -->
-        <div class="form-group">
-          <label class="form-label">名前 <span class="req">必須</span></label>
-          <input class="form-input" type="text" id="fName" placeholder="山田 太郎">
-        </div>
-        <div class="form-group">
-          <label class="form-label">ローマ字</label>
-          <input class="form-input" type="text" id="fNameEn" placeholder="TARO YAMADA">
-        </div>
-
-        <!-- 背番号・ポジション -->
-        <div class="form-group">
-          <label class="form-label">背番号</label>
-          <input class="form-input" type="number" id="fNumber" placeholder="10" min="1" max="99">
-        </div>
-        <div class="form-group">
-          <label class="form-label">ポジション <span class="req">必須</span></label>
-          <select class="form-select" id="fPosition">
-            <option value="">選択してください</option>
-            <optgroup label="フィールドプレーヤー">
-              <option value="GK">GK</option>
-              <option value="DF">DF</option>
-              <option value="MF">MF</option>
-              <option value="FW">FW</option>
-            </optgroup>
-            <optgroup label="スタッフ">
-              <option value="監督">監督</option>
-              <option value="コーチ">コーチ</option>
-              <option value="GKコーチ">GKコーチ</option>
-              <option value="マネージャー">マネージャー</option>
-              <option value="代表">代表</option>
-            </optgroup>
-          </select>
-        </div>
-
-        <!-- カテゴリー -->
-        <div class="form-group full">
-          <label class="form-label">カテゴリー <span class="req">必須</span></label>
-          <select class="form-select" id="fCategory">
-            <option value="">選択してください</option>
-            <option value="jy">ジュニアユース（U-15）</option>
-            <option value="jr">ジュニア（U-12）</option>
-            <option value="staff">スタッフ</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button class="btn-save" id="btnSave" onclick="savePlayer()">保存する</button>
-        <button class="btn-cancel" onclick="closeForm()">キャンセル</button>
-        <button class="btn-delete" id="btnDelete" onclick="deletePlayer()" style="display:none;">削除</button>
-      </div>
+  <div class="hero-content">
+    <div class="hero-tag">SINCE 2001 — HOKUTO CITY, YAMANASHI</div>
+    <h1 class="hero-title">
+      感動する<em class="accent-word">サッカー</em>
+    </h1>
+    <p class="hero-subtitle">
+      八ヶ岳の大自然のもと、子どもたちがフットボールを通じて<br>
+      自分の人生を切り開く力を育てるクラブです。<br>
+      ジュニアユース・ジュニア対象。北杜市で活動中。
+    </p>
+    <div class="hero-ctas">
+      <a href="grande_recruit.html" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        選手募集中
+      </a>
+      <a href="#about" class="btn-outline">クラブを知る →</a>
     </div>
   </div>
-</div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<!-- LOADING -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">保存中...</div>
-</div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    SCROLL
+  </div>
+</section>
 
 <script>
-const API_KEY = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
-const PLAYERS_BIN_KEY = 'grande_players_bin_id';
+(function() {
+  const canvas = document.getElementById('fieldCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
 
-let binId = localStorage.getItem(PLAYERS_BIN_KEY) || null;
-let players = [];
-let editingId = null;
-let currentTab = 'all';
-let photoData = null;
+  // 解像度をデバイスピクセル比に合わせる
+  const dpr = window.devicePixelRatio || 1;
+  const W = 480, H = 320;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
 
-// ===== BIN 初期化 =====
-async function initBin() {
-  setSyncStatus('syncing', '接続中...');
-  if (binId) {
-    await loadPlayers();
-    return;
-  }
-  // 新規Bin作成
-  try {
-    const res = await fetch('https://api.jsonbin.io/v3/b', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY,
-        'X-Bin-Name': 'grande-players',
-        'X-Bin-Private': 'false'
-      },
-      body: JSON.stringify({ players: [] })
-    });
-    const json = await res.json();
-    binId = json.metadata.id;
-    localStorage.setItem(PLAYERS_BIN_KEY, binId);
-    players = [];
-    renderList();
-    setSyncStatus('synced', '準備完了');
-    showToast('選手データを初期化しました');
-  } catch(e) {
-    setSyncStatus('error', 'エラー');
-    showToast('接続に失敗しました', true);
-  }
-}
+  // 色
+  const GOLD  = 'rgba(212,168,32,';
+  const WHITE = 'rgba(255,255,255,';
 
-// ===== データ読み込み =====
-async function loadPlayers() {
-  try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-      headers: { 'X-Master-Key': API_KEY }
-    });
-    const json = await res.json();
-    players = json.record.players || [];
-    renderList();
-    setSyncStatus('synced', '同期済み');
-  } catch(e) {
-    setSyncStatus('error', 'エラー');
-    showToast('データの読み込みに失敗しました', true);
-  }
-}
+  // 描画する全ラインをパスとして定義
+  // 各パスは { points: [[x,y],...], color, width, dash? }
+  const paths = [];
 
-// ===== データ保存 =====
-async function savePlayers() {
-  const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': API_KEY
-    },
-    body: JSON.stringify({ players })
-  });
-  if (!res.ok) throw new Error('Save failed');
-}
+  // --- ピッチ外枠 ---
+  paths.push({ points: [[10,10],[470,10],[470,310],[10,310],[10,10]], color: GOLD, w: 1.2 });
 
-// ===== リスト描画 =====
-function renderList() {
-  const list = document.getElementById('playerList');
-  const filtered = currentTab === 'all' ? players : players.filter(p => p.category === currentTab);
+  // --- センターライン（縦） ---
+  paths.push({ points: [[240,10],[240,310]], color: GOLD, w: 1.0 });
 
-  // カテゴリー順でソート（staff → jy → jr）、その中で背番号順
-  const order = { staff:0, jy:1, jr:2 };
-  filtered.sort((a,b) => {
-    if ((order[a.category]||9) !== (order[b.category]||9)) return (order[a.category]||9) - (order[b.category]||9);
-    return (parseInt(a.number)||99) - (parseInt(b.number)||99);
+  // --- センターサークル ---
+  paths.push({ type: 'arc', cx: 240, cy: 160, r: 60, color: GOLD, w: 1.0 });
+
+  // --- センタースポット ---
+  paths.push({ type: 'dot', cx: 240, cy: 160, r: 3, color: GOLD });
+
+  // --- 左ペナルティエリア ---
+  paths.push({ points: [[10,95],[80,95],[80,225],[10,225]], color: GOLD, w: 1.0 });
+
+  // --- 右ペナルティエリア ---
+  paths.push({ points: [[470,95],[400,95],[400,225],[470,225]], color: GOLD, w: 1.0 });
+
+  // --- 左ゴールエリア ---
+  paths.push({ points: [[10,130],[36,130],[36,190],[10,190]], color: GOLD, w: 0.8 });
+
+  // --- 右ゴールエリア ---
+  paths.push({ points: [[470,130],[444,130],[444,190],[470,190]], color: GOLD, w: 0.8 });
+
+  // --- 左ペナルティスポット ---
+  paths.push({ type: 'dot', cx: 55, cy: 160, r: 3, color: GOLD });
+
+  // --- 右ペナルティスポット ---
+  paths.push({ type: 'dot', cx: 425, cy: 160, r: 3, color: GOLD });
+
+  // --- 左ペナルティアーク ---
+  paths.push({ type: 'arc', cx: 55, cy: 160, r: 42, startAngle: -0.9, endAngle: 0.9, color: GOLD, w: 0.8 });
+
+  // --- 右ペナルティアーク ---
+  paths.push({ type: 'arc', cx: 425, cy: 160, r: 42, startAngle: Math.PI - 0.9, endAngle: Math.PI + 0.9, color: GOLD, w: 0.8 });
+
+  // --- コーナーアーク（4隅） ---
+  const corners = [
+    { cx: 10,  cy: 10,  s: 0,              e: Math.PI/2 },
+    { cx: 470, cy: 10,  s: Math.PI/2,      e: Math.PI },
+    { cx: 470, cy: 310, s: Math.PI,        e: 3*Math.PI/2 },
+    { cx: 10,  cy: 310, s: 3*Math.PI/2,   e: 2*Math.PI },
+  ];
+  corners.forEach(c => {
+    paths.push({ type: 'arc', cx: c.cx, cy: c.cy, r: 10, startAngle: c.s, endAngle: c.e, color: GOLD, w: 0.8 });
   });
 
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-list">選手がいません</div>';
-    return;
-  }
+  // ---- アニメーション管理 ----
+  // 各パスの「描画進捗」0→1
+  const progress = new Array(paths.length).fill(0);
+  const SPEED = 0.028; // 1フレームあたりの進捗増分
+  const DELAY = 6;     // パス間の開始ディレイ（フレーム数）
+  let frame = 0;
 
-  const posClass = { GK:'pos-GK', DF:'pos-DF', MF:'pos-MF', FW:'pos-FW' };
-  const catLabel = { jy:'JY', jr:'JR', staff:'STAFF' };
-
-  list.innerHTML = filtered.map(p => `
-    <div class="player-item ${editingId === p.id ? 'active' : ''}" onclick="editPlayer('${p.id}')">
-      <div class="player-num ${p.category === 'staff' ? 'staff' : ''}">${p.number || '—'}</div>
-      <div class="player-info">
-        <div class="player-name">${p.name || '名前未設定'}</div>
-        <div class="player-meta">${catLabel[p.category]||''} ${p.nameEn ? '/ ' + p.nameEn : ''}</div>
-      </div>
-      <span class="player-pos ${posClass[p.position] || 'pos-staff'}">${p.position || ''}</span>
-    </div>
-  `).join('');
-}
-
-// ===== タブ切替 =====
-function setTab(tab, btn) {
-  currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderList();
-}
-
-// ===== 新規追加 =====
-function newPlayer() {
-  editingId = null;
-  photoData = null;
-  document.getElementById('formTitle').textContent = '新規追加';
-  document.getElementById('formSub').textContent = '選手情報を入力してください';
-  document.getElementById('fName').value = '';
-  document.getElementById('fNameEn').value = '';
-  document.getElementById('fNumber').value = '';
-  document.getElementById('fPosition').value = '';
-  document.getElementById('fCategory').value = '';
-  document.getElementById('photoUrl').value = '';
-  document.getElementById('photoPreviewWrap').style.display = 'none';
-  document.getElementById('btnDelete').style.display = 'none';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('formPanel').classList.add('show');
-}
-
-// ===== 編集 =====
-function editPlayer(id) {
-  const p = players.find(x => x.id === id);
-  if (!p) return;
-  editingId = id;
-  photoData = p.photo || null;
-
-  document.getElementById('formTitle').textContent = p.name || '選手編集';
-  document.getElementById('formSub').textContent = '情報を編集して保存してください';
-  document.getElementById('fName').value = p.name || '';
-  document.getElementById('fNameEn').value = p.nameEn || '';
-  document.getElementById('fNumber').value = p.number || '';
-  document.getElementById('fPosition').value = p.position || '';
-  document.getElementById('fCategory').value = p.category || '';
-
-  if (p.photo) {
-    document.getElementById('photoUrl').value = p.photo;
-    document.getElementById('photoPreview').src = p.photo;
-    document.getElementById('photoPreviewWrap').style.display = 'block';
-  } else {
-    document.getElementById('photoUrl').value = '';
-    document.getElementById('photoPreviewWrap').style.display = 'none';
-  }
-
-  document.getElementById('btnDelete').style.display = 'block';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('formPanel').classList.add('show');
-  renderList();
-}
-
-// ===== 写真プレビュー =====
-// GoogleドライブURLを直接表示できる形式に変換
-function convertDriveUrl(url) {
-  if (!url) return null;
-  // https://drive.google.com/file/d/FILE_ID/view → 直接表示URL
-  const m1 = url.match(/\/file\/d\/([^\/\?]+)/);
-  if (m1) return 'https://drive.google.com/uc?export=view&id=' + m1[1];
-  // https://drive.google.com/open?id=FILE_ID
-  const m2 = url.match(/[?&]id=([^&]+)/);
-  if (m2) return 'https://drive.google.com/uc?export=view&id=' + m2[1];
-  // すでに直接URLの場合はそのまま
-  if (url.startsWith('http')) return url;
-  return null;
-}
-
-function onUrlInput(val) {
-  const converted = convertDriveUrl(val.trim());
-  if (converted) {
-    photoData = converted;
-    document.getElementById('photoPreview').src = converted;
-    document.getElementById('photoPreviewWrap').style.display = 'block';
-  } else {
-    photoData = null;
-    document.getElementById('photoPreviewWrap').style.display = 'none';
-  }
-}
-
-function clearPhoto() {
-  photoData = null;
-  document.getElementById('photoUrl').value = '';
-  document.getElementById('photoPreviewWrap').style.display = 'none';
-}
-
-// ===== 保存 =====
-async function savePlayer() {
-  const name = document.getElementById('fName').value.trim();
-  const pos  = document.getElementById('fPosition').value;
-  const cat  = document.getElementById('fCategory').value;
-
-  if (!name) { showToast('名前を入力してください', true); return; }
-  if (!pos)  { showToast('ポジションを選択してください', true); return; }
-  if (!cat)  { showToast('カテゴリーを選択してください', true); return; }
-
-  const playerData = {
-    id: editingId || 'p_' + Date.now(),
-    name,
-    nameEn: document.getElementById('fNameEn').value.trim(),
-    number: document.getElementById('fNumber').value,
-    position: pos,
-    category: cat,
-    photo: photoData || null,
-    updatedAt: new Date().toISOString()
-  };
-
-  showLoading('保存中...');
-  setSyncStatus('syncing', '保存中...');
-
-  try {
-    if (editingId) {
-      const idx = players.findIndex(p => p.id === editingId);
-      if (idx !== -1) players[idx] = playerData;
-    } else {
-      players.push(playerData);
+  // 円弧の総長を計算（ポリラインは点間距離の合計）
+  function pathLength(p) {
+    if (p.type === 'arc') {
+      const span = p.endAngle !== undefined
+        ? Math.abs(p.endAngle - p.startAngle)
+        : 2 * Math.PI;
+      return p.r * span;
     }
-    await savePlayers();
-    setSyncStatus('synced', '同期済み');
-    showToast(editingId ? '更新しました！' : '追加しました！');
-    editingId = playerData.id;
-    renderList();
-    document.getElementById('formTitle').textContent = playerData.name;
-    document.getElementById('btnDelete').style.display = 'block';
-  } catch(e) {
-    showToast('保存に失敗しました', true);
-    setSyncStatus('error', 'エラー');
-  } finally {
-    hideLoading();
+    if (p.type === 'dot') return 1;
+    let len = 0;
+    for (let i = 1; i < p.points.length; i++) {
+      const dx = p.points[i][0] - p.points[i-1][0];
+      const dy = p.points[i][1] - p.points[i-1][1];
+      len += Math.sqrt(dx*dx + dy*dy);
+    }
+    return len;
   }
-}
 
-// ===== 削除 =====
-async function deletePlayer() {
-  if (!editingId) return;
-  const p = players.find(x => x.id === editingId);
-  if (!confirm(`「${p?.name || '選手'}」を削除しますか？`)) return;
+  function drawPath(p, t) {
+    if (t <= 0) return;
+    const alpha = Math.min(t * 1.5, 0.55);
+    ctx.strokeStyle = p.color + alpha + ')';
+    ctx.fillStyle   = p.color + alpha + ')';
+    ctx.lineWidth   = p.w || 1;
+    ctx.lineCap     = 'round';
 
-  showLoading('削除中...');
-  try {
-    players = players.filter(x => x.id !== editingId);
-    await savePlayers();
-    showToast('削除しました');
-    closeForm();
-    renderList();
-  } catch(e) {
-    showToast('削除に失敗しました', true);
-  } finally {
-    hideLoading();
+    if (p.type === 'dot') {
+      ctx.beginPath();
+      ctx.arc(p.cx, p.cy, p.r, 0, 2 * Math.PI);
+      ctx.fill();
+      return;
+    }
+
+    if (p.type === 'arc') {
+      const fullSpan = p.endAngle !== undefined
+        ? (p.endAngle - p.startAngle)
+        : 2 * Math.PI;
+      const start = p.startAngle !== undefined ? p.startAngle : 0;
+      const end   = start + fullSpan * t;
+      ctx.beginPath();
+      ctx.arc(p.cx, p.cy, p.r, start, end);
+      ctx.stroke();
+      return;
+    }
+
+    // ポリライン: t に応じた途中まで描く
+    const totalLen = pathLength(p);
+    const target   = totalLen * t;
+    let drawn = 0;
+    ctx.beginPath();
+    ctx.moveTo(p.points[0][0], p.points[0][1]);
+    for (let i = 1; i < p.points.length; i++) {
+      const dx = p.points[i][0] - p.points[i-1][0];
+      const dy = p.points[i][1] - p.points[i-1][1];
+      const seg = Math.sqrt(dx*dx + dy*dy);
+      if (drawn + seg >= target) {
+        const ratio = (target - drawn) / seg;
+        ctx.lineTo(
+          p.points[i-1][0] + dx * ratio,
+          p.points[i-1][1] + dy * ratio
+        );
+        break;
+      }
+      ctx.lineTo(p.points[i][0], p.points[i][1]);
+      drawn += seg;
+    }
+    ctx.stroke();
   }
-}
 
-// ===== フォームを閉じる =====
-function closeForm() {
-  editingId = null;
-  document.getElementById('formPanel').classList.remove('show');
-  document.getElementById('emptyState').style.display = 'flex';
-  renderList();
-}
+  // 描画完了後にフェードグロー
+  function drawGlow(p) {
+    if (p.type === 'dot') return;
+    ctx.strokeStyle = p.color + '0.12)';
+    ctx.lineWidth   = (p.w || 1) + 4;
+    ctx.lineCap     = 'round';
+    if (p.type === 'arc') {
+      const span  = p.endAngle !== undefined ? (p.endAngle - p.startAngle) : 2*Math.PI;
+      const start = p.startAngle !== undefined ? p.startAngle : 0;
+      ctx.beginPath();
+      ctx.arc(p.cx, p.cy, p.r, start, start + span);
+      ctx.stroke();
+      return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(p.points[0][0], p.points[0][1]);
+    for (let i = 1; i < p.points.length; i++) ctx.lineTo(p.points[i][0], p.points[i][1]);
+    ctx.stroke();
+  }
 
-// ===== UI ヘルパー =====
-function setSyncStatus(state, text) {
-  const dot = document.getElementById('syncDot');
-  const txt = document.getElementById('syncText');
-  dot.className = 'sync-dot ' + (state === 'synced' ? 'synced' : state === 'syncing' ? 'syncing' : '');
-  txt.textContent = text;
-}
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+    frame++;
 
-function showToast(msg, isError=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (isError ? ' error' : '');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
-}
+    paths.forEach((p, i) => {
+      const startFrame = i * DELAY;
+      if (frame >= startFrame) {
+        progress[i] = Math.min(progress[i] + SPEED, 1);
+      }
+      if (progress[i] >= 1) drawGlow(p);
+      drawPath(p, progress[i]);
+    });
 
-function showLoading(msg='処理中...') {
-  document.getElementById('loadingText').textContent = msg;
-  document.getElementById('loadingOverlay').classList.add('show');
-}
-function hideLoading() {
-  document.getElementById('loadingOverlay').classList.remove('show');
-}
+    const allDone = progress.every(v => v >= 1);
+    if (!allDone) requestAnimationFrame(tick);
+  }
 
-// ===== 起動 =====
-initBin();
+  // ページロード後に少し待ってから開始
+  setTimeout(() => requestAnimationFrame(tick), 300);
+})();
 </script>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-label">RESULT</div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="tickerInner">
+      <span>試合結果を読み込み中...</span>
+      <span>試合結果を読み込み中...</span>
+    </div>
+  </div>
+</div>
+
+<!-- NEWS -->
+<section class="news-section" id="news">
+  <div class="news-header">
+    <div>
+      <div class="section-eyebrow">LATEST NEWS</div>
+      <h2 class="section-title">最新<em>情報</em></h2>
+      <div class="section-line"></div>
+    </div>
+    <a href="grande_news.html" class="more-link">過去の記事を見る <span>→</span></a>
+  </div>
+
+  <div class="news-grid">
+    <a href="grande_news.html" class="news-card featured">
+      <div class="news-img">GRANDE</div>
+      <div class="news-cat">クラブニュース</div>
+      <div class="news-title">2026年度 ジュニアユース・ジュニア新入団選手募集のお知らせ — 無料体験練習会を随時開催中！お気軽にご参加ください</div>
+      <div class="news-date">2026.06.01</div>
+    </a>
+    <a href="grande_news.html" class="news-card">
+      <div class="news-cat">ジュニアユース</div>
+      <div class="news-title">第〇回山梨県U-15サッカーリーグ — 試合結果速報</div>
+      <div class="news-date">2026.05.28</div>
+    </a>
+    <a href="grande_news.html" class="news-card">
+      <div class="news-cat">イベント</div>
+      <div class="news-title">巡回サッカー教室 北杜市立〇〇小学校にて開催しました</div>
+      <div class="news-date">2026.05.25</div>
+    </a>
+    <a href="grande_news.html" class="news-card">
+      <div class="news-cat">ジュニア</div>
+      <div class="news-title">U-12リーグ第3節 試合レポート掲載</div>
+      <div class="news-date">2026.05.20</div>
+    </a>
+    <a href="grande_news.html" class="news-card">
+      <div class="news-cat">お知らせ</div>
+      <div class="news-title">6月の練習スケジュール・変更のお知らせ（掲示板）</div>
+      <div class="news-date">2026.05.18</div>
+    </a>
+  </div>
+</section>
+
+
+<script>
+// ニュースをJSONBinから読み込み
+(function(){
+  const API_KEY  = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
+  const NEWS_BIN = '6a1ed74af5f4af5e29ad180b';
+
+  async function loadNews() {
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${NEWS_BIN}/latest`, {
+        headers: { 'X-Master-Key': API_KEY }
+      });
+      const json = await res.json();
+      const posts = (json.record.posts || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+      if (!posts.length) return;
+
+      const grid = document.querySelector('.news-grid');
+      if (!grid) return;
+
+      const formatDate = str => {
+        if (!str) return '';
+        const d = new Date(str);
+        return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+      };
+
+      // 最新5件を表示
+      const display = posts.slice(0, 5);
+      function convertUrl(url) {
+        if (!url) return null;
+        const m = url.match(/\/file\/d\/([^\/\?]+)/);
+        if (m) return 'https://lh3.googleusercontent.com/d/' + m[1];
+        return url;
+      }
+
+      grid.innerHTML = display.map((p, i) => {
+        const imgUrl = convertUrl(p.image);
+        const imgHtml = imgUrl
+          ? `<div class="news-img" style="background-image:url('${imgUrl}');background-size:cover;background-position:center;"></div>`
+          : `<div class="news-img">GRANDE</div>`;
+        const smallImgHtml = imgUrl
+          ? `<div style="width:100%;aspect-ratio:16/9;background-image:url('${imgUrl}');background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#071A0F;margin-bottom:12px;"></div>`
+          : '';
+        return `<a href="grande_news.html" class="news-card ${i === 0 ? 'featured' : ''}">
+          ${i === 0 ? imgHtml : smallImgHtml}
+          <div class="news-cat">${p.category || 'クラブニュース'}</div>
+          <div class="news-title">${p.title || ''}</div>
+          <div class="news-date">${formatDate(p.date)}</div>
+        </a>`;
+      }).join('');
+
+    } catch(e) {
+      console.log('ニュース読み込みスキップ:', e.message);
+    }
+  }
+
+  loadNews();
+})();
+</script>
+
+<!-- ABOUT -->
+<section class="about-section" id="about">
+  <div class="about-accent"></div>
+  <div class="about-accent2"></div>
+
+  <div class="about-grid">
+    <div class="about-text">
+      <div class="section-eyebrow">CLUB PHILOSOPHY</div>
+      <h2 class="section-title">クラブ<em>理念</em></h2>
+      <div class="section-line"></div>
+      <br><br>
+      <p>
+        <strong>「夢に向かって努力できる子供になって欲しい」</strong><br>
+        その想いで、2001年に北杜市・韮崎市初のクラブチームを創設しました。
+      </p>
+      <p>
+        八ヶ岳の麓、雄大な自然に恵まれた環境の中で、<br>
+        地域に愛されるクラブ、そして子供達が<strong>人間として成長</strong>していけるチーム作りを目指しております。
+      </p>
+      <p>
+        フットボールを通じて、<strong>自分で人生を切り開いていける</strong>、<br>人生を楽しめる大人になって欲しいと願っております。
+      </p>
+      <br>
+      <a href="grande_about.html" class="btn-outline" style="width:fit-content;">クラブ詳細を見る →</a>
+    </div>
+
+    <div>
+      <div class="about-stats">
+        <div class="stat-box">
+          <div class="stat-num">25<span>年</span></div>
+          <div class="stat-label">クラブ創設からの歴史</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">2<span>カテゴリー</span></div>
+          <div class="stat-label">ジュニアユース・ジュニア</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">北杜<span>市</span></div>
+          <div class="stat-label">山梨県を拠点に活動</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">∞</div>
+          <div class="stat-label">子どもたちの可能性</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="cats-section" id="cats">
+  <div class="section-header">
+    <div class="section-eyebrow">CATEGORIES</div>
+    <h2 class="section-title">カテゴリー<em>紹介</em></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="cats-grid">
+    <a href="grande_players.html" class="cat-card">
+      <div class="cat-header">
+        <div class="cat-num">U15</div>
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        </div>
+        <div class="cat-name">ジュニアユース</div>
+        <div class="cat-sub">中学生 (U-15) 対象</div>
+      </div>
+      <div class="cat-body">
+        <p class="cat-desc">中学生年代のトップカテゴリー。山梨県リーグを中心に全国を目指して活動。個人戦術・チーム戦術を磨き、上のステージへの飛躍を目指します。</p>
+        <div class="cat-link">
+          詳細を見る
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="grande_players.html" class="cat-card">
+      <div class="cat-header">
+        <div class="cat-num">U12</div>
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg>
+        </div>
+        <div class="cat-name">ジュニア</div>
+        <div class="cat-sub">小学生 (U-12) 対象</div>
+      </div>
+      <div class="cat-body">
+        <p class="cat-desc">小学生年代のサッカーの基礎をしっかりと習得。ボールを扱う楽しさ・チームプレーの喜びを体験しながら、サッカーが大好きな選手を育てます。</p>
+        <div class="cat-link">
+          詳細を見る
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="grande_players.html" class="cat-card">
+      <div class="cat-header">
+        <div class="cat-num">SC</div>
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+        </div>
+        <div class="cat-name">スクール</div>
+        <div class="cat-sub">未就学〜小学生対象</div>
+      </div>
+      <div class="cat-body">
+        <p class="cat-desc">はじめてサッカーに触れる子どもたちのためのスクール。楽しみながらボールに親しみ、運動の基礎能力も自然に育てます。体験随時受付中！</p>
+        <div class="cat-link">
+          体験申込はこちら
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- RECRUIT -->
+<section class="recruit-section" id="recruit">
+  <div class="section-header">
+    <div class="section-eyebrow">JOIN US</div>
+    <h2 class="section-title" style="color:white;">選手<em style="color:var(--accent)">募集</em></h2>
+    <div class="section-line" style="background:var(--accent);"></div>
+  </div>
+
+  <div class="recruit-grid">
+    <div class="recruit-card">
+      <div class="recruit-tag">JUNIOR YOUTH</div>
+      <div class="recruit-name">ジュニアユース 募集</div>
+      <div class="recruit-age">中学1〜3年生（U-15）対象</div>
+      <ul class="recruit-info">
+        <li>活動日：月・水・木・土・日</li>
+        <li>食育プロジェクト：「グランデ食堂」を毎週月曜日に実施</li>
+        <li>活動場所：白州総合運動場・長坂総合スポーツ公園 ほか</li>
+        <li>在籍地域：山梨県北杜市・韮崎市・南アルプス市、長野県富士見町・原村・茅野市・川上村 ほか</li>
+      </ul>
+      <br>
+      <a href="grande_recruit.html" class="btn-primary" style="margin-top:8px;">練習会に参加する</a>
+    </div>
+
+    <div class="recruit-card">
+      <div class="recruit-tag">JUNIOR</div>
+      <div class="recruit-name">ジュニア 募集</div>
+      <div class="recruit-age">小学1〜6年生（U-12）対象</div>
+      <ul class="recruit-info">
+        <li>活動日：月・水・（木）・土・日</li>
+        <li>※水曜日は高学年のみ活動</li>
+        <li>活動場所：白州総合運動場・長坂総合スポーツ公園 ほか</li>
+        <li>体験練習：随時受付中</li>
+        <li>未経験者・初心者も大歓迎！</li>
+      </ul>
+      <br>
+      <a href="grande_recruit.html" class="btn-primary" style="margin-top:8px;">体験練習会に申込む</a>
+    </div>
+  </div>
+
+  <br><br>
+  <div style="text-align:center;">
+    <a href="grande_contact.html" style="color:rgba(255,255,255,0.6); font-size:13px; text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:2px;">お問い合わせ・詳細はこちら →</a>
+  </div>
+</section>
+
+<!-- INITIATIVES -->
+<section style="padding:80px 4rem; background:var(--off-white);">
+  <div class="section-header">
+    <div class="section-eyebrow">CLUB INITIATIVES</div>
+    <h2 class="section-title">クラブの<em>取り組み</em></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div id="initiatives-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+
+    <!-- 湯RANDE -->
+    <a href="grande_yurande.html" style="text-decoration:none; color:inherit; display:block; background:var(--white); border:1px solid #DDE4EF; overflow:hidden; transition:all 0.25s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 40px rgba(26,107,60,0.15)';this.style.borderColor='var(--blue)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='#DDE4EF'">
+      <div style="background:linear-gradient(135deg, #0F4526 0%, #1A6B3C 100%); padding:32px 28px 24px; position:relative; overflow:hidden;">
+        <div style="position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:72px; opacity:0.12; line-height:1;">♨</div>
+        <div style="font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:3px; color:var(--accent); margin-bottom:8px;">GRANDE × 温泉</div>
+        <div style="font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:900; color:var(--white); letter-spacing:1px; line-height:1;">湯RANDE</div>
+        <div style="height:3px; width:40px; background:var(--accent); margin-top:10px;"></div>
+      </div>
+      <div style="padding:20px 28px 24px;">
+        <p style="font-size:14px; line-height:1.9; color:#5A6A80; margin-bottom:16px;">練習・試合のあとに、<strong style="color:var(--text);">グランデ関係者なら誰でも200円</strong>で北杜市「べるが」内の温泉「尾白の湯」に入れる特別企画。選手・保護者・OBみんなが対象です。</p>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <span style="background:#E8F5EE; color:var(--blue-dark); font-size:12px; font-weight:700; padding:4px 10px; border-radius:2px;">通常830円→200円</span>
+          <span style="background:#FDF6E3; color:#7A5A00; font-size:12px; font-weight:700; padding:4px 10px; border-radius:2px;">2026.4〜2027.3</span>
+        </div>
+        <div style="font-size:13px; font-weight:700; color:var(--blue); display:flex; align-items:center; gap:6px;">クーポンはLINEから →</div>
+      </div>
+    </a>
+
+    <!-- グランデ食堂 -->
+    <a href="grande_shokudo.html" style="text-decoration:none; color:inherit; display:block; background:var(--white); border:1px solid #DDE4EF; overflow:hidden; transition:all 0.25s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 40px rgba(26,107,60,0.15)';this.style.borderColor='var(--blue)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='#DDE4EF'">
+      <div style="background:linear-gradient(135deg, #2A1800 0%, #7A5A00 100%); padding:32px 28px 24px; position:relative; overflow:hidden;">
+        <div style="position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:72px; opacity:0.12; line-height:1;">🍚</div>
+        <div style="font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:3px; color:var(--accent); margin-bottom:8px;">食育 × フットボール</div>
+        <div style="font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:900; color:var(--white); letter-spacing:1px; line-height:1;">グランデ食堂</div>
+        <div style="height:3px; width:40px; background:var(--accent); margin-top:10px;"></div>
+      </div>
+      <div style="padding:20px 28px 24px;">
+        <p style="font-size:14px; line-height:1.9; color:#5A6A80; margin-bottom:16px;"><strong style="color:var(--text);">白州米・地元野菜・栄養士監修</strong>の食事で選手の心と体を育てる取り組み。化学調味料不使用、ごはん・汁物おかわり自由。毎月のBMI測定で体と向き合う習慣も。</p>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <span style="background:#E8F5EE; color:var(--blue-dark); font-size:12px; font-weight:700; padding:4px 10px; border-radius:2px;">栄養士監修</span>
+          <span style="background:#FDF6E3; color:#7A5A00; font-size:12px; font-weight:700; padding:4px 10px; border-radius:2px;">地産地消</span>
+          <span style="background:#FBEAF0; color:#72243E; font-size:12px; font-weight:700; padding:4px 10px; border-radius:2px;">食育</span>
+        </div>
+        <div style="font-size:13px; font-weight:700; color:var(--blue); display:flex; align-items:center; gap:6px;">詳細を見る →</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section style="padding:80px 4rem; background:var(--green-deep);" id="results">
+  <div class="section-header">
+    <div class="section-eyebrow" style="color:var(--accent);">LATEST RESULTS</div>
+    <h2 class="section-title" style="color:var(--white);">最新<em>試合結果</em></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div id="homeResultList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:28px;">
+    <!-- JS で挿入 -->
+    <div style="text-align:center; color:rgba(255,255,255,0.3); font-size:13px; padding:20px;">読み込み中...</div>
+  </div>
+
+  <div style="text-align:center;">
+    <a href="grande_results.html" style="display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:var(--green-deep); padding:13px 28px; font-size:14px; font-weight:900; font-family:'Noto Sans JP',sans-serif; text-decoration:none; transition:all 0.2s; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);">
+      全試合結果を見る →
+    </a>
+  </div>
+</section>
+
+<!-- SCHEDULE -->
+<section class="schedule-section" id="schedule">
+  <div class="section-header">
+    <div class="section-eyebrow">SCHEDULE</div>
+    <h2 class="section-title">活動<em>スケジュール</em></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="schedule-grid">
+    <div>
+      <h3 style="font-size:14px; font-weight:700; letter-spacing:2px; color:var(--blue); margin-bottom:16px; font-family:'Barlow Condensed',sans-serif;">JUNIOR YOUTH — ジュニアユース</h3>
+      <ul class="schedule-list">
+        <li>
+          <div class="schedule-day">月</div>
+          <div class="schedule-content">
+            <div class="schedule-event">通常練習</div>
+            <div class="schedule-meta">18:30〜20:30 ／ 白州総合運動場</div>
+          </div>
+        </li>
+        <li>
+          <div class="schedule-day">水</div>
+          <div class="schedule-content">
+            <div class="schedule-event">通常練習</div>
+            <div class="schedule-meta">18:30〜20:30 ／ 白州総合運動場</div>
+          </div>
+        </li>
+        <li>
+          <div class="schedule-day">木</div>
+          <div class="schedule-content">
+            <div class="schedule-event">通常練習</div>
+            <div class="schedule-meta">18:30〜20:30 ／ 長坂総合スポーツ公園</div>
+          </div>
+        </li>
+        <li>
+          <div class="schedule-day accent">土・日</div>
+          <div class="schedule-content">
+            <div class="schedule-event">練習 or 試合</div>
+            <div class="schedule-meta">会場はLINEにてご確認ください</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 style="font-size:14px; font-weight:700; letter-spacing:2px; color:var(--blue); margin-bottom:16px; font-family:'Barlow Condensed',sans-serif;">JUNIOR — ジュニア / スクール</h3>
+      <ul class="schedule-list">
+        <li>
+          <div class="schedule-day">月</div>
+          <div class="schedule-content">
+            <div class="schedule-event">通常練習（4〜6年）</div>
+            <div class="schedule-meta">18:00〜20:00 ／ 白州総合運動場</div>
+          </div>
+        </li>
+        <li>
+          <div class="schedule-day">木</div>
+          <div class="schedule-content">
+            <div class="schedule-event">通常練習 / スクール</div>
+            <div class="schedule-meta">18:00〜20:00（SC 17:00〜18:00） ／ 長坂総合スポーツ公園</div>
+          </div>
+        </li>
+        <li>
+          <div class="schedule-day accent">土・日</div>
+          <div class="schedule-content">
+            <div class="schedule-event">練習 or 試合</div>
+            <div class="schedule-meta">会場はLINEにてご確認ください</div>
+          </div>
+        </li>
+      </ul>
+      <br>
+      <a href="grande_schedule.html" class="more-link">詳細スケジュールを確認する →</a>
+    </div>
+  </div>
+</section>
+
+
+<script>
+(function(){
+  const BIN_ID  = '6a1d192121f9ee59d2a39471';
+  const API_KEY = '$2a$10$fMVrBXjLBMllbrm18CDXy.ELqnMQmZbg65x13ZhaU55B/4Tuq4Ina';
+
+  function fmtDate(str) {
+    if (!str) return '';
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return (d.getMonth()+1) + '/' + d.getDate();
+  }
+
+  function resultLabel(r) {
+    if (r === '勝ち') return '<span style="background:#1A6B3C;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;font-family:'Barlow Condensed',sans-serif;">勝</span>';
+    if (r === '引き分け') return '<span style="background:#8A7000;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;font-family:'Barlow Condensed',sans-serif;">分</span>';
+    return '<span style="background:#A32020;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;font-family:'Barlow Condensed',sans-serif;">負</span>';
+  }
+
+  fetch('https://api.jsonbin.io/v3/b/' + BIN_ID + '/latest', {
+    headers: { 'X-Master-Key': API_KEY }
+  })
+  .then(r => r.json())
+  .then(json => {
+    const record = json.record;
+    let matches = Array.isArray(record) ? record
+      : record.matches ? record.matches
+      : record.results ? record.results
+      : Object.values(record).find(v => Array.isArray(v)) || [];
+
+    if (!matches.length) return;
+
+    // 新しい順に並べて最新5件
+    matches = matches.slice().sort((a,b) => new Date(b.date||b.datetime||0) - new Date(a.date||a.datetime||0)).slice(0,5);
+
+    // ① 試合結果セクション
+    const listEl = document.getElementById('homeResultList');
+    if (listEl) {
+      listEl.innerHTML = matches.map(m => {
+        const my  = parseInt(m.myGoals  ?? m.homeScore ?? 0);
+        const opp = parseInt(m.oppGoals ?? m.awayScore ?? 0);
+        const res = m.result || (my > opp ? '勝ち' : my === opp ? '引き分け' : '負け');
+        return \`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(212,168,32,0.15);padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:rgba(255,255,255,0.4);min-width:36px;">\${fmtDate(m.date||m.datetime)}</span>
+          <span style="font-size:12px;color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;min-width:80px;">\${m.tournament||m.tournamentName||''}</span>
+          <span style="font-size:14px;font-weight:700;color:#fff;">グランデFC</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:#fff;line-height:1;">\${my} <span style="color:rgba(255,255,255,0.3);font-size:20px;">-</span> \${opp}</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.6);">\${m.opponent||m.opponentName||'相手チーム'}</span>
+          <span style="margin-left:auto;">\${resultLabel(res)}</span>
+        </div>\`;
+      }).join('');
+    }
+
+    // ② ティッカーに試合結果を流す
+    const ticker = document.getElementById('tickerInner');
+    if (ticker) {
+      const items = matches.map(m => {
+        const my  = parseInt(m.myGoals  ?? m.homeScore ?? 0);
+        const opp = parseInt(m.oppGoals ?? m.awayScore ?? 0);
+        const res = m.result || (my > opp ? '勝ち' : my === opp ? '引き分け' : '負け');
+        const mark = res === '勝ち' ? '勝' : res === '引き分け' ? '分' : '負';
+        return \`<span>[\${mark}] \${fmtDate(m.date||m.datetime)} \${m.tournament||''} vs \${m.opponent||m.opponentName||'?'} \${my}-\${opp}</span>\`;
+      });
+      // 無限ループ用に2セット
+      ticker.innerHTML = [...items, ...items].join('');
+      // テキスト量に応じてアニメ速度を調整
+      ticker.style.animationDuration = (items.length * 8) + 's';
+    }
+  })
+  .catch(() => {});
+})();
+</script>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="name">GRANDE FC</div>
+      <div class="sub">八ヶ岳グランデフットボールクラブ</div>
+      <p>山梨県北杜市を拠点に活動するジュニアユース・ジュニア対象のサッカークラブです。2001年創設。夢に向かって努力できる子供を育てます。</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>クラブ</h4>
+      <ul>
+        <li><a href="grande_about.html">クラブ理念</a></li>
+        <li><a href="grande_about.html">エンブレム・ロゴ</a></li>
+        <li><a href="grande_about.html">クラブ概要</a></li>
+        <li><a href="grande_about.html">沿革</a></li>
+        <li><a href="grande_players.html">スタッフ</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>カテゴリー</h4>
+      <ul>
+        <li><a href="grande_players.html">ジュニアユース</a></li>
+        <li><a href="grande_players.html">ジュニア</a></li>
+        <li><a href="grande_recruit.html">スクール</a></li>
+        <li><a href="grande_news.html">巡回サッカー教室</a></li>
+        <li><a href="grande_about.html">育成指針</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>参加・お問合せ</h4>
+      <ul>
+        <li><a href="grande_recruit.html">選手募集</a></li>
+        <li><a href="grande_recruit.html">練習会申込</a></li>
+        <li><a href="grande_contact.html">お問い合わせ</a></li>
+        <li><a href="grande_results.html">試合結果</a></li>
+        <li><a href="grande_news.html">クラブニュース</a></li>
+        <li><a href="https://www.youtube.com/channel/UCmnUnCiMTVW6kd9gCPXdNAg" target="_blank">YouTube</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 Yatsugatake Grande Football Club. All Rights Reserved.</span>
+    <span>山梨県北杜市 ／ <a href="#">プライバシーポリシー</a></span>
+  </div>
+</footer>
+
 </body>
 </html>
