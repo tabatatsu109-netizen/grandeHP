@@ -140,26 +140,37 @@
     overflow: hidden;
   }
   .hero-video-layer video {
-    width: 100%; height: 100%; object-fit: cover;
-    opacity: 0.35; filter: saturate(0.5) brightness(0.6);
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 1;
+    /* 動画自体はそのままの色で表示 */
   }
-  /* スマホでは動画非表示・背景画像 */
+  /* 動画の上に黒30%オーバーレイ */
+  .hero-video-layer::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.30);
+    pointer-events: none;
+  }
+  /* スマホ：動画非表示 → 背景画像 */
   @media (max-width: 768px) {
     .hero-video-layer video { display: none; }
     .hero-video-layer {
       background: url('assets/hero-mobile.jpg') center/cover no-repeat;
-      opacity: 0.4;
+    }
+    .hero-video-layer::after {
+      background: rgba(0, 0, 0, 0.45);
     }
   }
 
-  /* グラデーションオーバーレイ */
+  /* グラデーションオーバーレイ（動画の視認性を保ちつつ左側のテキスト可読性確保） */
   .hero-bg {
     position: absolute; inset: 0; z-index: 1;
     background:
-      linear-gradient(105deg,
-        rgba(7,26,14,0.94) 0%,
-        rgba(14,59,35,0.75) 45%,
-        rgba(7,26,14,0.35) 100%);
+      linear-gradient(100deg,
+        rgba(7,26,14,0.82) 0%,
+        rgba(7,26,14,0.60) 40%,
+        rgba(7,26,14,0.10) 100%);
   }
 
   /* 右の幾何学装飾（既存） */
@@ -204,13 +215,19 @@
   }
 
   .hero-title {
-    font-family: var(--font-cond);
-    font-size: clamp(52px, 7.5vw, 96px);
+    font-family: var(--font-sans);   /* 日本語はNoto Sans JP */
+    font-size: clamp(36px, 5.5vw, 68px);
     font-weight: 900;
-    line-height: 0.92;
+    line-height: 1.15;
     color: var(--white);
-    letter-spacing: -0.02em;
-    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+  }
+  .hero-title .accent-word {
+    /* 2行目をゴールド・ブロック表示 */
+    display: block;
+    color: var(--gold);
+    font-style: normal;
   }
 
   /* 日本語キャッチコピー（新設） */
@@ -224,11 +241,7 @@
     font-style: italic;
   }
 
-  .hero-title .accent-word {
-    color: var(--gold);
-    font-style: italic;
-    display: block;
-  }
+
 
   .hero-subtitle {
     font-size: clamp(13px,1.5vw,15px);
@@ -859,9 +872,8 @@
   <div class="hero-content">
     <div class="hero-tag">SINCE 2001 — HOKUTO CITY, YAMANASHI</div>
     <h1 class="hero-title">
-      FOOTBALL<em class="accent-word">WITH HEART.</em>
+      感動するサッカーを、<em class="accent-word">八ヶ岳から。</em>
     </h1>
-    <p class="hero-jp-copy">サッカーで、心を育てる。</p>
     <p class="hero-subtitle">
       八ヶ岳の大自然のもと、子どもたちがフットボールを通じて<br>
       自分の人生を切り開く力を育てるクラブです。<br>
